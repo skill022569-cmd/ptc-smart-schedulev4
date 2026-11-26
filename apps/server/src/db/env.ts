@@ -19,6 +19,17 @@ export function findRepoRoot(startDir: string = process.cwd()): string {
   }
 }
 
+/** Resolve a workspace-relative path reliably in local dev, tests, and Vercel bundles. */
+export function resolveProjectFile(...segments: string[]): string {
+  const candidates = [
+    path.join(findRepoRoot(), ...segments),
+    path.resolve(process.cwd(), ...segments),
+    path.resolve(process.cwd(), '..', '..', ...segments),
+  ];
+  for (const p of candidates) if (existsSync(p)) return p;
+  return candidates[0]!;
+}
+
 let loaded = false;
 
 /** Load the root `.env` once (existing `process.env` values win). Returns the resolved path. */

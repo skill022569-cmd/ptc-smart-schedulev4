@@ -4,6 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "dev": "pnpm --parallel --filter @ptc/server --filter @ptc/web dev",
+    "build": "pnpm --filter @ptc/web build",
     "typecheck": "pnpm -r typecheck",
     "test": "vitest run",
     "db:init": "pnpm --filter @ptc/server db:init",
@@ -12,6 +14,10 @@
     "db:migrate": "pnpm --filter @ptc/server db:migrate",
     "seed": "pnpm --filter @ptc/server seed",
     "gen:scenarios": "pnpm --filter @ptc/server gen:scenarios"
+  },
+  "dependencies": {
+    "@ptc/server": "workspace:*",
+    "@ptc/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.6.7",
