@@ -1,12 +1,12 @@
 import { defineConfig } from 'drizzle-kit';
-import { getDatabaseUrl } from './src/db/env';
+import { getDrizzleDatabaseUrl } from './src/db/env';
 
 export default defineConfig({
   schema: './src/db/schema.ts',
   out: '../../drizzle',
   dialect: 'mysql',
   dbCredentials: {
-    url: getDatabaseUrl(),
+    url: getDrizzleDatabaseUrl(),
   },
   strict: true,
   verbose: true,

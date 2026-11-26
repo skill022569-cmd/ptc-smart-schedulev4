@@ -6,6 +6,7 @@
   "scripts": {
     "typecheck": "pnpm -r typecheck",
     "test": "vitest run",
+    "db:init": "pnpm --filter @ptc/server db:init",
     "db:generate": "pnpm --filter @ptc/server db:generate",
     "db:push": "pnpm --filter @ptc/server db:push",
     "db:migrate": "pnpm --filter @ptc/server db:migrate",

@@ -40,3 +40,30 @@ export function getDatabaseUrl(): string {
 export function shouldUseTls(url: string = getDatabaseUrl()): boolean {
   return process.env.DB_SSL === 'true' || url.includes('tidbcloud.com');
 }
+
+/** Remove any `ssl` query param so `mysql2` uses the explicit `ssl` pool option cleanly. */
+export function stripSslParam(url: string): string {
+  try {
+    const u = new URL(url);
+    if (!u.searchParams.has('ssl')) return url;
+    u.searchParams.delete('ssl');
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
+/** Return a Drizzle Kit compatible MySQL URL with `ssl` query param when TLS is enabled. */
+export function getDrizzleDatabaseUrl(): string {
+  const url = getDatabaseUrl();
+  if (!shouldUseTls(url)) return url;
+  try {
+    const u = new URL(url);
+    if (!u.searchParams.has('ssl')) {
+      u.searchParams.set('ssl', JSON.stringify({ minVersion: 'TLSv1.2', rejectUnauthorized: true }));
+    }
+    return u.toString();
+  } catch {
+    return url;
+  }
+}

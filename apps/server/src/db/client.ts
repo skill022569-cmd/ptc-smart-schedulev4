@@ -1,12 +1,12 @@
 import { drizzle } from 'drizzle-orm/mysql2';
 import mysql, { type RowDataPacket } from 'mysql2/promise';
-import { getDatabaseUrl, shouldUseTls } from './env';
+import { getDatabaseUrl, shouldUseTls, stripSslParam } from './env';
 import * as schema from './schema';
 
 const databaseUrl = getDatabaseUrl();
 
 export const pool = mysql.createPool({
-  uri: databaseUrl,
+  uri: stripSslParam(databaseUrl),
   ...(shouldUseTls(databaseUrl) ? { ssl: { minVersion: 'TLSv1.2', rejectUnauthorized: true } } : {}),
   waitForConnections: true,
   connectionLimit: 10,
