@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --parallel --filter @ptc/server --filter @ptc/web dev",
-    "build": "pnpm --filter @ptc/web build",
+    "build": "pnpm --filter @ptc/server build:vercel && pnpm --filter @ptc/web build",
     "typecheck": "pnpm -r typecheck",
     "test": "vitest run",
     "db:init": "pnpm --filter @ptc/server db:init",
