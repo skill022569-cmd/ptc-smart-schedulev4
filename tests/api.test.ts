@@ -2,7 +2,12 @@ import { readFileSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { createEvaluationContext, type ScenarioDataset } from '../packages/shared/src';
+import {
+  createEvaluationContext,
+  evaluateSchedule,
+  type ScenarioDataset,
+  type XaiExplanationEntry,
+} from '../packages/shared/src';
 import { createApp } from '../apps/server/src/app';
 import { runAgenticPipeline } from '../apps/server/src/engine';
 import { exportTimetableCsv } from '../apps/server/src/services/export/csv';
@@ -12,6 +17,10 @@ import {
   buildSlotOccupancyRows,
   prepareScheduleVersionPersistence,
 } from '../apps/server/src/services/occupancy.service';
+import {
+  evaluateWorkspaceCached,
+  invalidateWorkspaceCache,
+} from '../apps/server/src/services/schedule-loader.service';
 
 function loadQ01(): ScenarioDataset {
   return JSON.parse(readFileSync(path.resolve(process.cwd(), 'scenarios', 'Q01.json'), 'utf8')) as ScenarioDataset;
@@ -143,4 +152,95 @@ describe('Phase 5 — Exports, Slot Occupancy Builder & Express REST API', () =>
       expect(ids1.has(occ.itemId)).toBe(true);
     }
   });
+
+  it('compacts persisted XAI to failing entries only (max 5) or null', () => {
+    const q01 = loadQ01();
+    const baseCtx = createEvaluationContext({ ...q01.tables, constraint_configs: [] }, { profileName: 'competition' });
+    const run = runAgenticPipeline({ ctx: baseCtx, algorithm: 'greedy', seed: 7, maxIterations: 2 });
+    expect(run.items.length).toBeGreaterThanOrEqual(3);
+
+    const entry = (code: string, passed: boolean): XaiExplanationEntry =>
+      ({ code, passed, messageTh: `${code}:${passed}` }) as unknown as XaiExplanationEntry;
+    const mixed = [
+      entry('H01', true),
+      entry('H02', false),
+      entry('H03', true),
+      ...['H04', 'H05', 'H06', 'H07', 'H09', 'H10'].map((c) => entry(c, false)),
+    ];
+    const items = run.items.slice(0, 3).map((item, idx) => ({
+      ...item,
+      explanation: idx === 0 ? mixed : idx === 1 ? [entry('H01', true), entry('H02', true)] : null,
+    }));
+    const itemIds = new Set(items.map((i) => i.id));
+
+    const prep = prepareScheduleVersionPersistence({
+      version: {
+        id: 'ver:xai:compact',
+        termId: baseCtx.term.id,
+        name: 'XAI compact',
+        source: 'run',
+        status: 'draft',
+        parentVersionId: null,
+        createdBy: null,
+        createdAt: null,
+      },
+      ctx: baseCtx,
+      items,
+      itemTeachers: run.itemTeachers.filter((it) => itemIds.has(it.itemId)),
+    });
+
+    const first = prep.items[0]!.explanation!;
+    expect(first).toHaveLength(5);
+    expect(first.every((e) => !e.passed)).toBe(true);
+    expect(first.map((e) => e.code)).toEqual(['H02', 'H04', 'H05', 'H06', 'H07']);
+    expect(prep.items[1]!.explanation).toBeNull(); // all passed -> null
+    expect(prep.items[2]!.explanation).toBeNull(); // none -> null
+    // Inputs are not mutated.
+    expect(items[0]!.explanation).toHaveLength(mixed.length);
+  });
+
+  it('exports invalidateWorkspaceCache and evaluates non-DB contexts fresh via evaluateWorkspaceCached', () => {
+    expect(typeof invalidateWorkspaceCache).toBe('function');
+    expect(() => invalidateWorkspaceCache()).not.toThrow();
+
+    const q01 = loadQ01();
+    const baseCtx = createEvaluationContext({ ...q01.tables, constraint_configs: [] }, { profileName: 'competition' });
+    const run = runAgenticPipeline({ ctx: baseCtx, algorithm: 'greedy', seed: 7, maxIterations: 2 });
+    const ctx = { ...baseCtx, items: run.items, itemTeachers: run.itemTeachers };
+
+    const cached = evaluateWorkspaceCached(ctx, { includePassedExplanations: false });
+    const direct = evaluateSchedule(ctx, { includePassedExplanations: false });
+    expect(cached.report.hardCount).toBe(direct.hardCount);
+    expect(cached.report.totalPenalty).toBe(direct.totalPenalty);
+    expect(cached.qualitySummary.profileName).toBe('competition');
+
+    // Locally mutated contexts must never be served a stale cached report.
+    const mutated = { ...ctx, items: ctx.items.slice(1) };
+    const again = evaluateWorkspaceCached(mutated, { includePassedExplanations: false });
+    expect(again.report).not.toBe(cached.report);
+  });
+
+  it('GET /schedule/:versionId/items/:itemId/explain returns 404 for unknown version/item', async (testCtx) => {
+    const app = createApp();
+    const server = app.listen(0);
+    try {
+      const addr = server.address() as AddressInfo;
+      const base = `http://127.0.0.1:${addr.port}/api`;
+      const health = await fetch(`${base}/health`).catch(() => null);
+      if (!health || health.status !== 200) {
+        testCtx.skip(); // DB not reachable from this environment
+        return;
+      }
+
+      const unknownVersion = await fetch(`${base}/schedule/ver-does-not-exist/items/item-does-not-exist/explain`);
+      expect(unknownVersion.status).toBe(404);
+
+      const unknownItem = await fetch(`${base}/schedule/latest/items/item-does-not-exist/explain?profile=competition`);
+      expect(unknownItem.status).toBe(404);
+      const body = (await unknownItem.json()) as { error: string };
+      expect(body.error).toBeTruthy();
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  }, 60_000);
 });

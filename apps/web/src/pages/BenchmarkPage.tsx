@@ -5,6 +5,7 @@ import { api } from '../lib/api';
 import type { BenchmarkResultRow } from '../types/ui';
 
 export function BenchmarkPage() {
+  const [preset, setPreset] = useState<'quick' | 'full'>('quick');
   const [results, setResults] = useState<BenchmarkResultRow[]>([]);
   const [running, setRunning] = useState(false);
   const [err, setErr] = useState('');
@@ -13,12 +14,21 @@ export function BenchmarkPage() {
     setRunning(true);
     setErr('');
     try {
-      const res = await api.runBenchmark({
-        algorithms: ['greedy', 'csp_ga', 'csp_sa'],
-        profiles: ['competition', 'teacher_first', 'room_first'],
-        seeds: [101, 202, 303],
-        maxIterations: 8,
-      });
+      const payload =
+        preset === 'quick'
+          ? {
+              algorithms: ['greedy', 'csp_ga'],
+              profiles: ['competition', 'teacher_first'],
+              seeds: [101, 202],
+              maxIterations: 6,
+            }
+          : {
+              algorithms: ['greedy', 'csp_ga', 'csp_sa'],
+              profiles: ['competition', 'teacher_first', 'room_first'],
+              seeds: [101, 202, 303],
+              maxIterations: 8,
+            };
+      const res = await api.runBenchmark(payload);
       setResults(res.results);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
@@ -41,9 +51,20 @@ export function BenchmarkPage() {
           <h1 className="text-2xl font-bold text-slate-900">Benchmark &amp; Multi-Objective Comparison</h1>
           <p className="text-sm text-slate-500">เปรียบเทียบ Greedy vs CSP+GA vs CSP+SA หลาย Seed และโปรไฟล์เน้นครู vs เน้นห้อง (โจทย์ 23, 25)</p>
         </div>
-        <button disabled={running} onClick={() => void run()} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
-          <BarChart3 className="h-4 w-4" /> {running ? 'กำลังรัน 3 Seed...' : 'รัน Benchmark (3 Seeds)'}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={preset}
+            onChange={(e) => setPreset(e.target.value as 'quick' | 'full')}
+            disabled={running}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700"
+          >
+            <option value="quick">โหมดเร็ว (2 Seeds · แนะนำบน Vercel)</option>
+            <option value="full">โหมดเต็ม (3 Seeds · 3 โปรไฟล์)</option>
+          </select>
+          <button disabled={running} onClick={() => void run()} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
+            <BarChart3 className="h-4 w-4" /> {running ? 'กำลังรัน Benchmark...' : 'รัน Benchmark'}
+          </button>
+        </div>
       </div>
 
       {err && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{err}</div>}

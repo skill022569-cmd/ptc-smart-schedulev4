@@ -29,7 +29,7 @@ const RULE_OPTIONS: Record<ChallengeCategory, Array<{ type: string; label: strin
 };
 
 export function ChallengeLabPage({ profile, onApplied }: { profile: string; onApplied: () => void }) {
-  const [rules, setRules] = useState<ChallengeRule[]>([]);
+  const [rules, setRules] = useState<ChallengeRule[]>(() => api.getCachedChallengeRules()?.rules ?? []);
   const [category, setCategory] = useState<ChallengeCategory>('time');
   const [ruleType, setRuleType] = useState('block_slots');
   const [description, setDescription] = useState('ล็อกพุธบ่ายทำกิจกรรม อวท.');
@@ -39,10 +39,14 @@ export function ChallengeLabPage({ profile, onApplied }: { profile: string; onAp
   const [busy, setBusy] = useState('');
   const [err, setErr] = useState('');
 
-  const refresh = async () => {
-    const res = await api.challengeRules();
-    setRules(res.rules);
-    setImpact(await api.evaluateChallenge(profile));
+  const refresh = async (force = false) => {
+    try {
+      const [res, imp] = await Promise.all([api.challengeRules(force), api.evaluateChallenge(profile)]);
+      setRules(res.rules);
+      setImpact(imp);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
   };
 
   useEffect(() => {
@@ -68,7 +72,7 @@ export function ChallengeLabPage({ profile, onApplied }: { profile: string; onAp
         mode: 'hard',
         description,
       });
-      await refresh();
+      await refresh(true);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     }
@@ -80,7 +84,7 @@ export function ChallengeLabPage({ profile, onApplied }: { profile: string; onAp
     try {
       const res = await api.applyChallenge(strategy, profile);
       setApplied(res);
-      await refresh();
+      await refresh(true);
       onApplied();
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
@@ -164,7 +168,16 @@ export function ChallengeLabPage({ profile, onApplied }: { profile: string; onAp
                   <span className="font-mono font-bold text-indigo-700">[{r.category}] {r.ruleType}</span>
                   <div className="text-slate-600">{r.description}</div>
                 </div>
-                <button onClick={() => void api.deleteChallengeRule(r.id).then(refresh)} className="text-slate-400 hover:text-red-600">
+                <button
+                  type="button"
+                  onClick={() =>
+                    void api
+                      .deleteChallengeRule(r.id)
+                      .then(() => refresh(true))
+                      .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
+                  }
+                  className="text-slate-400 hover:text-red-600"
+                >
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>

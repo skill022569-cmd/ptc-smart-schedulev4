@@ -4,21 +4,30 @@ import { api } from '../lib/api';
 import type { IssueCategory, IssueReport, ScheduleWorkspacePayload } from '../types/ui';
 
 export function IssueReportPage({ profile }: { profile: string }) {
-  const [ws, setWs] = useState<ScheduleWorkspacePayload | null>(null);
-  const [issues, setIssues] = useState<IssueReport[]>([]);
+  const cachedWs = api.getCachedScheduleLatest(profile);
+  const cachedIssues = api.getCachedIssues();
+  const [ws, setWs] = useState<ScheduleWorkspacePayload | null>(() => cachedWs);
+  const [issues, setIssues] = useState<IssueReport[]>(() => cachedIssues?.issues ?? []);
   const [category, setCategory] = useState<IssueCategory>('teacher_leave');
   const [affectedDate, setAffectedDate] = useState('2026-11-25');
-  const [affectedStaffId, setAffectedStaffId] = useState('');
-  const [affectedRoomId, setAffectedRoomId] = useState('');
+  const [affectedStaffId, setAffectedStaffId] = useState(() => cachedWs?.context.staff[0]?.id ?? '');
+  const [affectedRoomId, setAffectedRoomId] = useState(() => cachedWs?.context.rooms[0]?.id ?? '');
   const [description, setDescription] = useState('ครูลาป่วยกระทันหัน ขอให้ Repair Agent หาครูแทน');
+  const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
+  const [err, setErr] = useState('');
 
-  const load = async () => {
-    const [sRes, iRes] = await Promise.all([api.scheduleLatest(profile), api.issues()]);
-    setWs(sRes);
-    setIssues(iRes.issues);
-    if (!affectedStaffId && sRes.context.staff[0]) setAffectedStaffId(sRes.context.staff[0].id);
-    if (!affectedRoomId && sRes.context.rooms[0]) setAffectedRoomId(sRes.context.rooms[0].id);
+  const load = async (force = false) => {
+    try {
+      const [sRes, iRes] = await Promise.all([api.scheduleLatest(profile, force), api.issues(force)]);
+      setWs(sRes);
+      setIssues(iRes.issues);
+      if (!affectedStaffId && sRes.context.staff[0]) setAffectedStaffId(sRes.context.staff[0].id);
+      if (!affectedRoomId && sRes.context.rooms[0]) setAffectedRoomId(sRes.context.rooms[0].id);
+      setErr('');
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
   };
 
   useEffect(() => {
@@ -26,22 +35,38 @@ export function IssueReportPage({ profile }: { profile: string }) {
   }, [profile]);
 
   const submitIssue = async () => {
+    setBusy(true);
     setMsg('');
-    await api.createIssue({
-      category,
-      affectedDate,
-      affectedStaffId: category === 'teacher_leave' ? affectedStaffId : null,
-      affectedRoomId: category === 'room_outage' ? affectedRoomId : null,
-      description,
-    });
-    setMsg('สร้างรายการแจ้งเหตุและให้ Repair Agent เสนอแผนแก้ไขรายวันแล้ว');
-    await load();
+    setErr('');
+    try {
+      await api.createIssue({
+        category,
+        affectedDate,
+        affectedStaffId: category === 'teacher_leave' ? affectedStaffId : null,
+        affectedRoomId: category === 'room_outage' ? affectedRoomId : null,
+        description,
+      });
+      setMsg('สร้างรายการแจ้งเหตุและให้ Repair Agent เสนอแผนแก้ไขรายวันแล้ว');
+      await load(true);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const applyOption = async (issueId: string, optionIndex: number) => {
-    const res = await api.applyIssue(issueId, optionIndex);
-    setMsg(`บันทึกแผนแก้ไขรายวันที่ (${res.action}, กระทบ ${res.appliedCount} คาบ) โดยไม่กระทบตารางหลักแล้ว`);
-    await load();
+    setBusy(true);
+    setErr('');
+    try {
+      const res = await api.applyIssue(issueId, optionIndex);
+      setMsg(`บันทึกแผนแก้ไขรายวันที่ (${res.action}, กระทบ ${res.appliedCount} คาบ) โดยไม่กระทบตารางหลักแล้ว`);
+      await load(true);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -51,6 +76,7 @@ export function IssueReportPage({ profile }: { profile: string }) {
         <p className="text-sm text-slate-500">จัดการครูลา/ห้องเสียเฉพาะวันที่ผ่านตาราง `schedule_exceptions` โดยไม่แตะต้องตารางหลัก</p>
       </div>
 
+      {err && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{err}</div>}
       {msg && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{msg}</div>}
 
       <div className="grid grid-cols-1 gap-4 rounded-xl border border-slate-200 bg-white p-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -84,8 +110,8 @@ export function IssueReportPage({ profile }: { profile: string }) {
         )}
 
         <div className="flex items-end">
-          <button onClick={() => void submitIssue()} className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700">
-            <AlertTriangle className="h-4 w-4" /> แจ้งเหตุ &amp; ขอแผน Repair
+          <button disabled={busy} onClick={() => void submitIssue()} className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50">
+            <AlertTriangle className="h-4 w-4" /> {busy ? 'กำลังวิเคราะห์...' : 'แจ้งเหตุ & ขอแผน Repair'}
           </button>
         </div>
 

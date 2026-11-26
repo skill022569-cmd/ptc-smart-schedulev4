@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DndContext, useDraggable, useDroppable, type DragEndEvent } from '@dnd-kit/core';
-import { Lock, Unlock, Wand2 } from 'lucide-react';
-import { DAY_NAMES_TH, OccupancyIndex, type ScheduleItem } from '@ptc/shared';
+import { Lock, RefreshCw, Unlock, Wand2 } from 'lucide-react';
+import { DAY_NAMES_TH, OccupancyIndex, type ScheduleItem, type XaiExplanationEntry } from '@ptc/shared';
+import { PageSkeleton } from '../components/PageSkeleton';
 import { api } from '../lib/api';
 import type { FixOption, ScheduleWorkspacePayload } from '../types/ui';
 
@@ -68,23 +69,61 @@ function DroppableCell({
 }
 
 export function WorkspacePage({ profile }: { profile: string }) {
-  const [data, setData] = useState<ScheduleWorkspacePayload | null>(null);
-  const [groupId, setGroupId] = useState('');
+  const cachedInit = api.getCachedScheduleLatest(profile);
+  const [data, setData] = useState<ScheduleWorkspacePayload | null>(() => cachedInit);
+  const [loading, setLoading] = useState(() => !cachedInit);
+  const [groupId, setGroupId] = useState(() => cachedInit?.context.studentGroups[0]?.id ?? '');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [fetchedXai, setFetchedXai] = useState<XaiExplanationEntry[] | null>(null);
+  const [xaiLoading, setXaiLoading] = useState(false);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [fixOptions, setFixOptions] = useState<FixOption[] | null>(null);
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
 
-  const load = async () => {
-    const res = await api.scheduleLatest(profile);
-    setData(res);
-    if (!groupId && res.context.studentGroups[0]) setGroupId(res.context.studentGroups[0].id);
+  const load = async (force = false) => {
+    const cached = !force ? api.getCachedScheduleLatest(profile) : null;
+    if (cached) setData(cached);
+    setLoading(!cached);
+    setErr('');
+    try {
+      const res = await api.scheduleLatest(profile, force);
+      setData(res);
+      setGroupId((prev) => prev || res.context.studentGroups[0]?.id || '');
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'ไม่สามารถโหลดพื้นที่จัดตารางได้');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     void load();
   }, [profile]);
+
+  useEffect(() => {
+    const vId = data?.version?.id;
+    if (!selectedItemId || !vId) {
+      setFetchedXai(null);
+      return;
+    }
+    let cancelled = false;
+    setXaiLoading(true);
+    void api
+      .explainItem(vId, selectedItemId, profile)
+      .then((res) => {
+        if (!cancelled) setFetchedXai(res.explanations);
+      })
+      .catch(() => {
+        if (!cancelled) setFetchedXai(null);
+      })
+      .finally(() => {
+        if (!cancelled) setXaiLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedItemId, data?.version?.id, profile]);
 
   const occupancy = useMemo(() => {
     if (!data) return null;
@@ -125,7 +164,22 @@ export function WorkspacePage({ profile }: { profile: string }) {
     return { occ, roomById, groupById, subById, gByOff, tByItem };
   }, [data]);
 
-  if (!data || !occupancy) return <div className="rounded-xl bg-white p-8 text-center text-slate-500">กำลังโหลดตารางลากวาง...</div>;
+  if (loading && (!data || !occupancy)) return <PageSkeleton cards={2} />;
+  if (err && (!data || !occupancy)) {
+    return (
+      <div className="rounded-xl border border-rose-200 bg-white p-6 text-center">
+        <p className="text-sm font-medium text-rose-700">{err}</p>
+        <button
+          type="button"
+          onClick={() => void load(true)}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+        >
+          <RefreshCw className="h-3.5 w-3.5" /> ลองใหม่
+        </button>
+      </div>
+    );
+  }
+  if (!data || !occupancy) return <PageSkeleton cards={2} />;
 
   const offById = new Map(data.context.offerings.map((o) => [o.id, o]));
   const subjById = new Map(data.context.subjects.map((s) => [s.id, s]));
@@ -173,7 +227,7 @@ export function WorkspacePage({ profile }: { profile: string }) {
     try {
       const res = await api.moveItem(data.version.id, itemId, { dayOfWeek, startPeriod, status: 'scheduled' });
       setMsg(`ย้ายคาบสำเร็จ (Hard Violations: ${res.report.hardCount}, Fitness: ${res.report.fitness})`);
-      await load();
+      await load(true);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     }
@@ -181,32 +235,50 @@ export function WorkspacePage({ profile }: { profile: string }) {
 
   const toggleLock = async (item: ScheduleItem) => {
     if (!data.version) return;
-    await api.moveItem(data.version.id, item.id, { isLocked: !item.isLocked });
-    await load();
+    setErr('');
+    try {
+      await api.moveItem(data.version.id, item.id, { isLocked: !item.isLocked });
+      setMsg(item.isLocked ? 'ปลดล็อกคาบสอนแล้ว' : 'ปักหมุดคาบสอน (Lock) แล้ว');
+      await load(true);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
   };
 
   const openFix = async (item: ScheduleItem) => {
     if (!data.version) return;
-    const res = await api.fixOptions(data.version.id, item.id, profile);
-    setFixOptions(res.options);
+    setErr('');
+    try {
+      const res = await api.fixOptions(data.version.id, item.id, profile);
+      setFixOptions(res.options);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
   };
 
   const applyFixOption = async (opt: FixOption) => {
     if (!data.version || !opt.changes[0]) return;
-    const ch = opt.changes[0];
-    await api.moveItem(data.version.id, ch.itemId, {
-      dayOfWeek: ch.day,
-      startPeriod: ch.startPeriod,
-      roomId: ch.roomId,
-      status: 'scheduled',
-    });
-    setFixOptions(null);
-    setMsg(`ใช้ตัวเลือก "${opt.labelTh}" สำเร็จ!`);
-    await load();
+    setErr('');
+    try {
+      const ch = opt.changes[0];
+      await api.moveItem(data.version.id, ch.itemId, {
+        dayOfWeek: ch.day,
+        startPeriod: ch.startPeriod,
+        roomId: ch.roomId,
+        status: 'scheduled',
+      });
+      setFixOptions(null);
+      setMsg(`ใช้ตัวเลือก "${opt.labelTh}" สำเร็จ!`);
+      await load(true);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
   };
 
   const selectedItem = selectedItemId ? data.context.items.find((i) => i.id === selectedItemId) ?? null : null;
-  const selectedXai = selectedItem ? data.report.itemExplanations[selectedItem.id] ?? selectedItem.explanation ?? [] : [];
+  const selectedXai = selectedItem
+    ? fetchedXai ?? data.report.itemExplanations[selectedItem.id] ?? selectedItem.explanation ?? []
+    : [];
 
   return (
     <div className="space-y-4">
@@ -268,7 +340,10 @@ export function WorkspacePage({ profile }: { profile: string }) {
                                 label={`${subj?.subjectCode ?? ''} (${item.duration}ชม.)`}
                                 subLabel={`${room} · ${tNames}`}
                                 selected={selectedItemId === item.id}
-                                onSelect={() => setSelectedItemId(item.id)}
+                                onSelect={() => {
+                                  setSelectedItemId(item.id);
+                                  setFixOptions(null);
+                                }}
                               />
                             );
                           })}
@@ -335,6 +410,7 @@ export function WorkspacePage({ profile }: { profile: string }) {
                 )}
 
                 <div className="max-h-64 space-y-1.5 overflow-y-auto text-xs">
+                  {xaiLoading && <div className="text-slate-400">กำลังโหลดเหตุผล XAI รายคาบ...</div>}
                   {selectedXai.filter((e) => !e.passed).map((e, i) => (
                     <div key={`f-${i}`} className="rounded bg-amber-50 p-2 text-amber-900">
                       <span className="font-mono font-bold">{e.code}</span>: {e.messageTh}

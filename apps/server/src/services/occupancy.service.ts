@@ -17,6 +17,7 @@ import {
   scheduleVersions,
   slotOccupancy,
 } from '../db/schema';
+import { invalidateWorkspaceCache } from './schedule-loader.service';
 
 const ITEM_BATCH_SIZE = 100;
 const LINK_BATCH_SIZE = 250;
@@ -112,8 +113,12 @@ export function prepareScheduleVersionPersistence(params: {
   const persistedItems: ScheduleItem[] = params.items.map((item) => {
     const newId = randomUUID();
     idMap.set(item.id, newId);
+    // Compact XAI before persistence: keep only failing entries (max 5); full XAI is
+    // recomputed on demand via GET /schedule/:versionId/items/:itemId/explain.
+    const violationsOnly = item.explanation ? item.explanation.filter((e) => !e.passed).slice(0, 5) : [];
     return {
       ...item,
+      explanation: violationsOnly.length > 0 ? violationsOnly : null,
       id: newId,
       versionId: safeVersionId,
       updatedBy: safeUuid(item.updatedBy),
@@ -184,6 +189,7 @@ export async function saveScheduleVersionAtomic(params: {
       afterData: { name: prepared.version.name, source: prepared.version.source, itemCount: prepared.items.length },
     });
   });
+  invalidateWorkspaceCache();
 
   return {
     versionId: prepared.version.id,
@@ -277,6 +283,7 @@ export async function updateScheduleItemAtomic(params: {
       },
     });
   });
+  invalidateWorkspaceCache();
 
   return updated;
 }

@@ -12,19 +12,26 @@ export function RunCenterPage({
   onProfileChange: (p: string) => void;
   onCompleted: () => void;
 }) {
+  const cachedRuns = api.getCachedRuns();
   const [algorithm, setAlgorithm] = useState<SchedulingAlgorithm>('csp_ga');
   const [seed, setSeed] = useState(2026);
   const [maxIterations, setMaxIterations] = useState(12);
-  const [runs, setRuns] = useState<SchedulingRun[]>([]);
-  const [profiles, setProfiles] = useState<string[]>(['competition', 'default', 'teacher_first', 'room_first']);
+  const [runs, setRuns] = useState<SchedulingRun[]>(() => cachedRuns?.runs ?? []);
+  const [profiles, setProfiles] = useState<string[]>(
+    () => cachedRuns?.profiles ?? ['competition', 'default', 'teacher_first', 'room_first'],
+  );
   const [latest, setLatest] = useState<RunResponse | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState('');
 
-  const loadRuns = async () => {
-    const res = await api.runs();
-    setRuns(res.runs);
-    if (res.profiles.length > 0) setProfiles(res.profiles);
+  const loadRuns = async (force = false) => {
+    try {
+      const res = await api.runs(force);
+      setRuns(res.runs);
+      if (res.profiles.length > 0) setProfiles(res.profiles);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
   };
 
   useEffect(() => {
@@ -43,7 +50,7 @@ export function RunCenterPage({
         timeLimitSec: 45,
       });
       setLatest(res);
-      await loadRuns();
+      await loadRuns(true);
       onCompleted();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));

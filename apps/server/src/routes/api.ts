@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { Router, type Request, type Response } from 'express';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
+import type { RowDataPacket } from 'mysql2/promise';
 import { z } from 'zod';
 import {
   BUILT_IN_PROFILES,
@@ -11,8 +12,12 @@ import {
   type ChallengeRule,
   type Dataset7ColumnMappingOverrides,
   type Dataset7Files,
+  type IssueReport,
   type ScenarioDataset,
+  type ScheduleEvaluationContext,
+  type ScheduleVersion,
   type SchedulingAlgorithm,
+  type SchedulingRun,
 } from '@ptc/shared';
 import { db, pool, testConnection } from '../db/client';
 import { resolveProjectFile } from '../db/env';
@@ -43,11 +48,74 @@ import { exportTimetablePdf } from '../services/export/pdf';
 import type { ExportViewMode } from '../services/export/shared';
 import { DEFAULT_COLUMN_MAPPING, parseDataset7, validateDataset7 } from '../services/import';
 import { saveScheduleVersionAtomic, updateScheduleItemAtomic } from '../services/occupancy.service';
-import { commitDataset7ToDb, loadContextFromDb } from '../services/schedule-loader.service';
+import {
+  commitDataset7ToDb,
+  evaluateWorkspaceCached,
+  invalidateWorkspaceCache,
+  loadContextFromDb,
+} from '../services/schedule-loader.service';
 import { SCENARIOS_CATALOG_25 } from '../data/scenarios-catalog';
 
 function strParam(v: string | string[] | undefined): string {
   return Array.isArray(v) ? (v[0] ?? '') : (v ?? '');
+}
+
+/** Same timestamp/date normalisation as `schedule-loader.service`. */
+function toTimestampStr(v: unknown): string | null {
+  if (v == null) return null;
+  if (v instanceof Date) return v.toISOString().replace('T', ' ').slice(0, 19);
+  return String(v);
+}
+
+function toDateStr(v: unknown): string {
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  return v == null ? '' : String(v);
+}
+
+/**
+ * Slim `context` payload for schedule views: no per-item XAI (fetch on demand via
+ * `/items/:itemId/explain`), no encrypted phones, no `students`.
+ */
+function serializeScheduleContext(ctx: ScheduleEvaluationContext) {
+  return {
+    term: ctx.term,
+    timeSlots: ctx.timeSlots,
+    departments: ctx.departments,
+    buildings: ctx.buildings,
+    roomTypes: ctx.roomTypes,
+    rooms: ctx.rooms,
+    staff: ctx.staff.map((s) => ({ ...s, phoneEncrypted: null })),
+    studentGroups: ctx.studentGroups,
+    subgroups: ctx.subgroups,
+    subjects: ctx.subjects,
+    offerings: ctx.offerings,
+    offeringGroups: ctx.offeringGroups,
+    offeringTeachers: [],
+    eligibilities: [],
+    fixedBlocks: ctx.fixedBlocks,
+    items: ctx.items.map((i) => ({ ...i, explanation: null })),
+    itemTeachers: ctx.itemTeachers,
+  };
+}
+
+function serializeScheduleReport(
+  report: ReturnType<typeof evaluateWorkspaceCached>['report'],
+  fullXai: boolean,
+) {
+  if (fullXai) return report;
+  const hardItemIds = new Set<string>();
+  for (const v of report.hardViolations) {
+    for (const id of v.itemIds) hardItemIds.add(id);
+  }
+  const compactExplanations: typeof report.itemExplanations = {};
+  for (const id of hardItemIds) {
+    if (report.itemExplanations[id]) compactExplanations[id] = report.itemExplanations[id];
+  }
+  return {
+    ...report,
+    softPenalties: report.softPenalties.map((s) => ({ ...s, details: [] })),
+    itemExplanations: compactExplanations,
+  };
 }
 
 function parseTimestamp(d = new Date()): string {
@@ -118,18 +186,13 @@ export function createApiRouter(): Router {
   // ---- Health & Auth -------------------------------------------------------
   router.get('/health', async (_req: Request, res: Response) => {
     try {
-      const ping = await testConnection();
-      const [rows] = await pool.query(
-        'SELECT COUNT(*) AS table_count FROM information_schema.tables WHERE table_schema = ?',
-        [ping.database ?? 'ptc_smart_schedulev4'],
-      );
-      const tableCount = Number((rows as Array<{ table_count: number }>)[0]?.table_count ?? 0);
+      const dbInfo = await testConnection();
       res.json({
         ok: true,
         app: 'PTC Smart Schedule V4',
-        database: ping.database,
-        dbVersion: ping.version,
-        tableCount,
+        database: dbInfo.database,
+        dbVersion: dbInfo.version,
+        tableCount: dbInfo.tableCount,
         publicDemoMode: isPublicDemoMode(),
       });
     } catch (err) {
@@ -169,8 +232,7 @@ export function createApiRouter(): Router {
   router.get('/dashboard', async (req: Request, res: Response) => {
     const profileName = strParam(req.query.profile as string | undefined) || 'competition';
     const ws = await loadContextFromDb({ profileName });
-    const report = evaluateSchedule(ws.ctx, { includePassedExplanations: false });
-    const summary = buildQualitySummary4D(ws.ctx, report);
+    const { report, qualitySummary: summary } = evaluateWorkspaceCached(ws.ctx, { includePassedExplanations: false });
     res.json({
       term: ws.ctx.term,
       activeVersion: ws.activeVersion,
@@ -202,15 +264,24 @@ export function createApiRouter(): Router {
 
   // ---- Scenarios (Q01–Q25 catalog + 1-click load Q01/Q21) ------------------
   router.get('/scenarios', async (_req: Request, res: Response) => {
-    const ws = await loadContextFromDb();
+    const [rows] = await pool.query<RowDataPacket[]>(
+      `SELECT
+         (SELECT COUNT(*) FROM departments) AS departments,
+         (SELECT COUNT(*) FROM student_groups) AS student_groups,
+         (SELECT COUNT(*) FROM staff) AS staff,
+         (SELECT COUNT(*) FROM rooms) AS rooms,
+         (SELECT COUNT(*) FROM subjects) AS subjects,
+         (SELECT COUNT(*) FROM course_offerings) AS course_offerings`,
+    );
+    const c = rows[0] ?? {};
     res.json({
       scenarios: SCENARIOS_CATALOG_25,
       currentCounts: {
-        departments: ws.ctx.departments.length,
-        groups: ws.ctx.studentGroups.length,
-        staff: ws.ctx.staff.length,
-        rooms: ws.ctx.rooms.length,
-        offerings: ws.ctx.offerings.length,
+        departments: Number(c.departments ?? 0),
+        groups: Number(c.student_groups ?? 0),
+        staff: Number(c.staff ?? 0),
+        rooms: Number(c.rooms ?? 0),
+        offerings: Number(c.course_offerings ?? 0),
       },
     });
   });
@@ -220,6 +291,7 @@ export function createApiRouter(): Router {
     const item = SCENARIOS_CATALOG_25.find((s) => s.code === rawCode);
     const target: SeedScenarioCode = rawCode === 'Q21' ? 'Q21' : item?.loadableDataset ?? 'Q01';
     const seeded = await seedScenarioIntoDb(target);
+    invalidateWorkspaceCache();
     const autoRun = req.body?.autoRun === true;
     let runResult = null;
     if (autoRun) {
@@ -270,6 +342,7 @@ export function createApiRouter(): Router {
         agentLog: pipe.agentLog,
         versionId: pipe.versionId,
       } as never);
+      invalidateWorkspaceCache();
       runResult = { versionId: pipe.versionId, report: pipe.report, qualitySummary: pipe.qualitySummary };
     }
     res.json({
@@ -322,8 +395,15 @@ export function createApiRouter(): Router {
 
   // ---- Solver Runs & Agentic Pipeline --------------------------------------
   router.get('/runs', async (_req: Request, res: Response) => {
-    const ws = await loadContextFromDb();
-    res.json({ runs: ws.runs, profiles: BUILT_IN_PROFILES, catalog: getProfileConfigs('competition') });
+    const rows = await db.select().from(schedulingRuns).orderBy(desc(schedulingRuns.startedAt)).limit(50);
+    const runs: SchedulingRun[] = rows.map((r) => ({
+      ...r,
+      softScore: r.softScore != null ? Number(r.softScore) : null,
+      fitness: r.fitness != null ? Number(r.fitness) : null,
+      startedAt: toTimestampStr(r.startedAt),
+      finishedAt: toTimestampStr(r.finishedAt),
+    }));
+    res.json({ runs, profiles: BUILT_IN_PROFILES, catalog: getProfileConfigs('competition') });
   });
 
   router.post('/runs', async (req: Request, res: Response) => {
@@ -388,6 +468,7 @@ export function createApiRouter(): Router {
       versionId,
     };
     await db.insert(schedulingRuns).values(runRow as never);
+    invalidateWorkspaceCache();
 
     res.json({
       run: runRow,
@@ -402,69 +483,53 @@ export function createApiRouter(): Router {
   // ---- Schedule Workspace & Views ------------------------------------------
   router.get('/schedule/latest', async (req: Request, res: Response) => {
     const profileName = strParam(req.query.profile as string | undefined) || 'competition';
+    const fullXai = req.query.fullXai === 'true';
     const ws = await loadContextFromDb({ profileName });
-    const report = evaluateSchedule(ws.ctx, { includePassedExplanations: true });
-    const qualitySummary = buildQualitySummary4D(ws.ctx, report);
+    const { report, qualitySummary } = evaluateWorkspaceCached(ws.ctx, {
+      includePassedExplanations: fullXai,
+    });
     res.json({
       version: ws.activeVersion,
       versions: ws.versions,
-      context: {
-        term: ws.ctx.term,
-        timeSlots: ws.ctx.timeSlots,
-        departments: ws.ctx.departments,
-        buildings: ws.ctx.buildings,
-        roomTypes: ws.ctx.roomTypes,
-        rooms: ws.ctx.rooms,
-        staff: ws.ctx.staff,
-        studentGroups: ws.ctx.studentGroups,
-        subgroups: ws.ctx.subgroups,
-        subjects: ws.ctx.subjects,
-        offerings: ws.ctx.offerings,
-        offeringGroups: ws.ctx.offeringGroups,
-        offeringTeachers: ws.ctx.offeringTeachers,
-        eligibilities: ws.ctx.eligibilities,
-        fixedBlocks: ws.ctx.fixedBlocks,
-        items: ws.ctx.items,
-        itemTeachers: ws.ctx.itemTeachers,
-      },
-      report,
+      context: serializeScheduleContext(ws.ctx),
+      report: serializeScheduleReport(report, fullXai),
       qualitySummary,
     });
+  });
+
+  // On-demand full XAI (passed + failed checks) for a single item.
+  router.get('/schedule/:versionId/items/:itemId/explain', async (req: Request, res: Response) => {
+    const versionId = strParam(req.params.versionId);
+    const itemId = strParam(req.params.itemId);
+    const profileName = strParam(req.query.profile as string | undefined) || 'competition';
+    const isLatest = versionId === 'latest';
+    const ws = await loadContextFromDb({ versionId: isLatest ? undefined : versionId, profileName });
+    const versionMatches = isLatest || ws.activeVersion?.id === versionId;
+    if (!versionMatches || !ws.ctx.items.some((i) => i.id === itemId)) {
+      res.status(404).json({ error: 'ไม่พบคาบเรียนที่ระบุในตารางสอนนี้' });
+      return;
+    }
+    const { report } = evaluateWorkspaceCached(ws.ctx, { includePassedExplanations: true });
+    res.json({ itemId, explanations: report.itemExplanations[itemId] ?? [] });
   });
 
   router.get('/schedule/:versionId', async (req: Request, res: Response) => {
     const versionId = strParam(req.params.versionId);
     const profileName = strParam(req.query.profile as string | undefined) || 'competition';
+    const fullXai = req.query.fullXai === 'true';
     const ws = await loadContextFromDb({ versionId, profileName });
     if (!ws.activeVersion || ws.activeVersion.id !== versionId) {
       res.status(404).json({ error: 'ไม่พบเวอร์ชันตารางสอนที่ระบุ' });
       return;
     }
-    const report = evaluateSchedule(ws.ctx, { includePassedExplanations: true });
-    const qualitySummary = buildQualitySummary4D(ws.ctx, report);
+    const { report, qualitySummary } = evaluateWorkspaceCached(ws.ctx, {
+      includePassedExplanations: fullXai,
+    });
     res.json({
       version: ws.activeVersion,
       versions: ws.versions,
-      context: {
-        term: ws.ctx.term,
-        timeSlots: ws.ctx.timeSlots,
-        departments: ws.ctx.departments,
-        buildings: ws.ctx.buildings,
-        roomTypes: ws.ctx.roomTypes,
-        rooms: ws.ctx.rooms,
-        staff: ws.ctx.staff,
-        studentGroups: ws.ctx.studentGroups,
-        subgroups: ws.ctx.subgroups,
-        subjects: ws.ctx.subjects,
-        offerings: ws.ctx.offerings,
-        offeringGroups: ws.ctx.offeringGroups,
-        offeringTeachers: ws.ctx.offeringTeachers,
-        eligibilities: ws.ctx.eligibilities,
-        fixedBlocks: ws.ctx.fixedBlocks,
-        items: ws.ctx.items,
-        itemTeachers: ws.ctx.itemTeachers,
-      },
-      report,
+      context: serializeScheduleContext(ws.ctx),
+      report: serializeScheduleReport(report, fullXai),
       qualitySummary,
     });
   });
@@ -486,9 +551,9 @@ export function createApiRouter(): Router {
         patch: parsed.data,
         updatedBy: req.user?.accountId ?? null,
       });
+      invalidateWorkspaceCache();
       const nextWs = await loadContextFromDb({ versionId });
-      const report = evaluateSchedule(nextWs.ctx, { includePassedExplanations: true });
-      const qualitySummary = buildQualitySummary4D(nextWs.ctx, report);
+      const { report, qualitySummary } = evaluateWorkspaceCached(nextWs.ctx, { includePassedExplanations: false });
       res.json({ item: updated, report, qualitySummary });
     } catch (err) {
       const causeMsg = (err as { cause?: { message?: string } } | null)?.cause?.message ?? '';
@@ -511,8 +576,9 @@ export function createApiRouter(): Router {
 
   // ---- Lucky Challenge Lab -------------------------------------------------
   router.get('/challenge/rules', async (_req: Request, res: Response) => {
-    const ws = await loadContextFromDb();
-    res.json({ rules: ws.challengeRules });
+    const rows = await db.select().from(challengeRules).orderBy(desc(challengeRules.createdAt));
+    const rules: ChallengeRule[] = rows.map((r) => ({ ...r, createdAt: toTimestampStr(r.createdAt) }));
+    res.json({ rules });
   });
 
   router.post('/challenge/rules', async (req: Request, res: Response) => {
@@ -535,12 +601,14 @@ export function createApiRouter(): Router {
       createdAt: parseTimestamp(),
     };
     await db.insert(challengeRules).values(rule as never);
+    invalidateWorkspaceCache();
     res.json({ rule });
   });
 
   router.delete('/challenge/rules/:id', async (req: Request, res: Response) => {
     const id = strParam(req.params.id);
     await db.delete(challengeRules).where(eq(challengeRules.id, id));
+    invalidateWorkspaceCache();
     res.json({ ok: true });
   });
 
@@ -619,6 +687,7 @@ export function createApiRouter(): Router {
       auditAccountId: req.user?.accountId ?? null,
       auditAction: 'apply_lucky_challenge',
     });
+    invalidateWorkspaceCache();
 
     const afterCtx = { ...impact.modifiedCtx, items: itemsWithXai, itemTeachers: newItemTeachers };
     const diff = diffScheduleVersions(ws.ctx, afterCtx, impact.report, afterReport);
@@ -633,8 +702,13 @@ export function createApiRouter(): Router {
 
   // ---- Emergency Issue Reports (Req 20) ------------------------------------
   router.get('/issues', async (_req: Request, res: Response) => {
-    const ws = await loadContextFromDb();
-    res.json({ issues: ws.issues });
+    const rows = await db.select().from(issueReports).orderBy(desc(issueReports.createdAt)).limit(100);
+    const issues: IssueReport[] = rows.map((i) => ({
+      ...i,
+      affectedDate: toDateStr(i.affectedDate),
+      createdAt: toTimestampStr(i.createdAt),
+    }));
+    res.json({ issues });
   });
 
   router.post('/issues', async (req: Request, res: Response) => {
@@ -664,6 +738,7 @@ export function createApiRouter(): Router {
       agentProposal: proposal as unknown as Record<string, unknown>,
     };
     await db.insert(issueReports).values(row as never);
+    invalidateWorkspaceCache();
     res.json({ issue: row, proposal });
   });
 
@@ -671,7 +746,19 @@ export function createApiRouter(): Router {
     const id = strParam(req.params.id);
     const optionIndex = Number(req.body?.optionIndex ?? 0);
     const ws = await loadContextFromDb();
-    const issue = ws.issues.find((i) => i.id === id);
+    // Direct lookup: `ws.issues` is capped at the 100 most recent reports.
+    const issue =
+      ws.issues.find((i) => i.id === id) ??
+      (await db
+        .select()
+        .from(issueReports)
+        .where(eq(issueReports.id, id))
+        .limit(1)
+        .then((rows) =>
+          rows[0]
+            ? ({ ...rows[0], affectedDate: toDateStr(rows[0].affectedDate), createdAt: toTimestampStr(rows[0].createdAt) } as IssueReport)
+            : undefined,
+        ));
     if (!issue || !ws.activeVersion) {
       res.status(404).json({ error: 'ไม่พบใบแจ้งเหตุหรือตารางสอนหลัก' });
       return;
@@ -704,6 +791,7 @@ export function createApiRouter(): Router {
       }
       await tx.update(issueReports).set({ status: 'applied' }).where(eq(issueReports.id, issue.id));
     });
+    invalidateWorkspaceCache();
     res.json({ ok: true, appliedCount: chosen.details.length, action: chosen.action });
   });
 
@@ -771,13 +859,15 @@ export function createApiRouter(): Router {
 
   // ---- Versions, Export (CSV / Excel / PDF Sarabun) & Audit ----------------
   router.get('/versions', async (_req: Request, res: Response) => {
-    const ws = await loadContextFromDb();
-    res.json({ versions: ws.versions });
+    const rows = await db.select().from(scheduleVersions).orderBy(desc(scheduleVersions.createdAt)).limit(50);
+    const versions: ScheduleVersion[] = rows.map((v) => ({ ...v, createdAt: toTimestampStr(v.createdAt) }));
+    res.json({ versions });
   });
 
   router.post('/versions/:id/publish', async (req: Request, res: Response) => {
     const id = strParam(req.params.id);
     await db.update(scheduleVersions).set({ status: 'published' }).where(eq(scheduleVersions.id, id));
+    invalidateWorkspaceCache();
     res.json({ ok: true });
   });
 

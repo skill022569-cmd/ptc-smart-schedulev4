@@ -4,15 +4,22 @@ import { api } from '../lib/api';
 import type { ScenarioCatalogItem } from '../types/ui';
 
 export function ScenariosPage({ profile, onLoaded }: { profile: string; onLoaded: () => void }) {
-  const [items, setItems] = useState<ScenarioCatalogItem[]>([]);
-  const [counts, setCounts] = useState<Record<string, number>>({});
+  const cached = api.getCachedScenarios();
+  const [items, setItems] = useState<ScenarioCatalogItem[]>(() => cached?.scenarios ?? []);
+  const [counts, setCounts] = useState<Record<string, number>>(() => cached?.currentCounts ?? {});
   const [busyCode, setBusyCode] = useState('');
   const [msg, setMsg] = useState('');
+  const [error, setError] = useState('');
 
-  const refresh = async () => {
-    const res = await api.scenarios();
-    setItems(res.scenarios);
-    setCounts(res.currentCounts);
+  const refresh = async (force = false) => {
+    try {
+      const res = await api.scenarios(force);
+      setItems(res.scenarios);
+      setCounts(res.currentCounts);
+      setError('');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
   };
 
   useEffect(() => {
@@ -22,13 +29,14 @@ export function ScenariosPage({ profile, onLoaded }: { profile: string; onLoaded
   const loadAndRun = async (code: string, autoRun: boolean) => {
     setBusyCode(code);
     setMsg('');
+    setError('');
     try {
       const res = await api.loadScenario(code, autoRun, profile);
       setMsg(`โหลดชุดข้อมูล ${res.loadedDataset} (${res.totalRows} แถว) สำเร็จใน ${res.durationMs} ms${autoRun ? ' และจัดตารางอัตโนมัติแล้ว' : ''}`);
-      await refresh();
+      await refresh(true);
       onLoaded();
     } catch (e) {
-      setMsg(`เกิดข้อผิดพลาด: ${e instanceof Error ? e.message : String(e)}`);
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusyCode('');
     }
@@ -43,6 +51,7 @@ export function ScenariosPage({ profile, onLoaded }: { profile: string; onLoaded
         </p>
       </div>
 
+      {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
       {msg && <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-800">{msg}</div>}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

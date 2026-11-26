@@ -1,16 +1,48 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { CheckCircle2, RefreshCw, XCircle } from 'lucide-react';
+import { PageSkeleton } from '../components/PageSkeleton';
 import { api } from '../lib/api';
 import type { ScheduleWorkspacePayload } from '../types/ui';
 
 export function QualitySummaryPage({ profile }: { profile: string }) {
-  const [data, setData] = useState<ScheduleWorkspacePayload | null>(null);
+  const [data, setData] = useState<ScheduleWorkspacePayload | null>(() => api.getCachedScheduleLatest(profile));
+  const [loading, setLoading] = useState(() => !api.getCachedScheduleLatest(profile));
+  const [error, setError] = useState('');
+
+  const load = async (force = false) => {
+    const cached = !force ? api.getCachedScheduleLatest(profile) : null;
+    if (cached) setData(cached);
+    setLoading(!cached);
+    setError('');
+    try {
+      setData(await api.scheduleLatest(profile, force));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'ไม่สามารถโหลดผลตรวจ 4 ด้านได้');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    void api.scheduleLatest(profile).then(setData);
+    void load();
   }, [profile]);
 
-  if (!data) return <div className="rounded-xl bg-white p-8 text-center text-slate-500">กำลังโหลดผลตรวจ 4 ด้าน...</div>;
+  if (loading && !data) return <PageSkeleton cards={4} />;
+  if (error && !data) {
+    return (
+      <div className="rounded-xl border border-rose-200 bg-white p-6 text-center">
+        <p className="text-sm font-medium text-rose-700">{error}</p>
+        <button
+          type="button"
+          onClick={() => void load(true)}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+        >
+          <RefreshCw className="h-3.5 w-3.5" /> ลองใหม่
+        </button>
+      </div>
+    );
+  }
+  if (!data) return <PageSkeleton cards={4} />;
   const q = data.qualitySummary;
 
   return (

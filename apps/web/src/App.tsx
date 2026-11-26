@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   Activity,
@@ -19,19 +19,22 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
-import { api, getDemoRole, getStoredToken, setDemoRole, setStoredToken } from './lib/api';
 import type { AccountRole } from '@ptc/shared';
-import type { AuthSession } from './types/ui';
-import { BenchmarkPage } from './pages/BenchmarkPage';
-import { ChallengeLabPage } from './pages/ChallengeLabPage';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { PageSkeleton } from './components/PageSkeleton';
+import { api, getDemoRole, getStoredToken, invalidateApiCache, setDemoRole, setStoredToken } from './lib/api';
 import { DashboardPage } from './pages/DashboardPage';
-import { ImportPage } from './pages/ImportPage';
-import { IssueReportPage } from './pages/IssueReportPage';
-import { QualitySummaryPage } from './pages/QualitySummaryPage';
-import { RunCenterPage } from './pages/RunCenterPage';
-import { ScenariosPage } from './pages/ScenariosPage';
-import { TimetableViewsPage } from './pages/TimetableViewsPage';
-import { WorkspacePage } from './pages/WorkspacePage';
+import type { AuthSession } from './types/ui';
+
+const ImportPage = lazy(() => import('./pages/ImportPage').then((m) => ({ default: m.ImportPage })));
+const ScenariosPage = lazy(() => import('./pages/ScenariosPage').then((m) => ({ default: m.ScenariosPage })));
+const RunCenterPage = lazy(() => import('./pages/RunCenterPage').then((m) => ({ default: m.RunCenterPage })));
+const QualitySummaryPage = lazy(() => import('./pages/QualitySummaryPage').then((m) => ({ default: m.QualitySummaryPage })));
+const WorkspacePage = lazy(() => import('./pages/WorkspacePage').then((m) => ({ default: m.WorkspacePage })));
+const TimetableViewsPage = lazy(() => import('./pages/TimetableViewsPage').then((m) => ({ default: m.TimetableViewsPage })));
+const ChallengeLabPage = lazy(() => import('./pages/ChallengeLabPage').then((m) => ({ default: m.ChallengeLabPage })));
+const BenchmarkPage = lazy(() => import('./pages/BenchmarkPage').then((m) => ({ default: m.BenchmarkPage })));
+const IssueReportPage = lazy(() => import('./pages/IssueReportPage').then((m) => ({ default: m.IssueReportPage })));
 
 interface NavItem {
   id: string;
@@ -67,7 +70,7 @@ export function App() {
   const [profile, setProfile] = useState<string>('competition');
   const [role, setRole] = useState<AccountRole>(() => getDemoRole());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [statusVersion, setStatusVersion] = useState(0);
 
   const [health, setHealth] = useState<{
     ok: boolean;
@@ -84,9 +87,9 @@ export function App() {
   const [loginBusy, setLoginBusy] = useState(false);
   const [loginError, setLoginError] = useState('');
 
-  const loadSystemStatus = async () => {
+  const loadSystemStatus = async (force = false) => {
     try {
-      const [h, me] = await Promise.all([api.health(), api.me().catch(() => null)]);
+      const [h, me] = await Promise.all([api.health(force), api.me(force).catch(() => null)]);
       setHealth(h);
       setHealthError('');
       if (me) setSession(me);
@@ -98,14 +101,25 @@ export function App() {
 
   useEffect(() => {
     void loadSystemStatus();
-  }, [role, refreshKey]);
+  }, [role, statusVersion]);
 
-  const bumpRefresh = () => setRefreshKey((k) => k + 1);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      api.prefetchTab('quality', profile);
+      api.prefetchTab('runs', profile);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [profile]);
+
+  const onMutated = () => {
+    invalidateApiCache();
+    setStatusVersion((v) => v + 1);
+  };
 
   const handleRoleChange = (nextRole: AccountRole) => {
     setDemoRole(nextRole);
     setRole(nextRole);
-    bumpRefresh();
+    setStatusVersion((v) => v + 1);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -118,8 +132,8 @@ export function App() {
       setLoginOpen(false);
       setUsername('');
       setPassword('');
-      await loadSystemStatus();
-      bumpRefresh();
+      await loadSystemStatus(true);
+      setStatusVersion((v) => v + 1);
     } catch (err) {
       setLoginError(err instanceof Error ? err.message : 'เข้าสู่ระบบไม่สำเร็จ');
     } finally {
@@ -129,8 +143,8 @@ export function App() {
 
   const handleLogout = async () => {
     setStoredToken(null);
-    await loadSystemStatus();
-    bumpRefresh();
+    await loadSystemStatus(true);
+    setStatusVersion((v) => v + 1);
   };
 
   const navigate = (tab: string) => {
@@ -141,35 +155,34 @@ export function App() {
   const hasJwt = Boolean(getStoredToken());
 
   const renderPage = () => {
-    const key = `${activeTab}-${refreshKey}`;
+    const scopeKey = `${activeTab}-${role}`;
     switch (activeTab) {
       case 'import':
-        return <ImportPage key={key} onCommitted={bumpRefresh} />;
+        return <ImportPage key={scopeKey} onCommitted={onMutated} />;
       case 'scenarios':
-        return <ScenariosPage key={key} profile={profile} onLoaded={bumpRefresh} />;
+        return <ScenariosPage key={scopeKey} profile={profile} onLoaded={onMutated} />;
       case 'runs':
-        return <RunCenterPage key={key} profile={profile} onProfileChange={setProfile} onCompleted={bumpRefresh} />;
+        return <RunCenterPage key={scopeKey} profile={profile} onProfileChange={setProfile} onCompleted={onMutated} />;
       case 'quality':
-        return <QualitySummaryPage key={key} profile={profile} />;
+        return <QualitySummaryPage key={scopeKey} profile={profile} />;
       case 'workspace':
-        return <WorkspacePage key={key} profile={profile} />;
+        return <WorkspacePage key={scopeKey} profile={profile} />;
       case 'views':
-        return <TimetableViewsPage key={key} profile={profile} />;
+        return <TimetableViewsPage key={scopeKey} profile={profile} />;
       case 'challenge':
-        return <ChallengeLabPage key={key} profile={profile} onApplied={bumpRefresh} />;
+        return <ChallengeLabPage key={scopeKey} profile={profile} onApplied={onMutated} />;
       case 'benchmark':
-        return <BenchmarkPage key={key} />;
+        return <BenchmarkPage key={scopeKey} />;
       case 'issues':
-        return <IssueReportPage key={key} profile={profile} />;
+        return <IssueReportPage key={scopeKey} profile={profile} />;
       case 'dashboard':
       default:
-        return <DashboardPage key={key} profile={profile} onNavigate={navigate} />;
+        return <DashboardPage key={scopeKey} profile={profile} onNavigate={navigate} />;
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      {/* Mobile Sidebar Overlay */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
           <div className="fixed inset-0 bg-slate-900/50" onClick={() => setMobileMenuOpen(false)} />
@@ -195,6 +208,8 @@ export function App() {
                   <button
                     key={item.id}
                     type="button"
+                    onMouseEnter={() => api.prefetchTab(item.id, profile)}
+                    onFocus={() => api.prefetchTab(item.id, profile)}
                     onClick={() => navigate(item.id)}
                     className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition ${
                       active ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-700 hover:bg-slate-100'
@@ -211,7 +226,6 @@ export function App() {
       )}
 
       <div className="flex min-h-screen">
-        {/* Desktop Sidebar */}
         <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
           <div className="border-b border-slate-200 px-4 py-4">
             <div className="flex items-center gap-2 text-base font-bold text-indigo-700">
@@ -231,6 +245,8 @@ export function App() {
                 <button
                   key={item.id}
                   type="button"
+                  onMouseEnter={() => api.prefetchTab(item.id, profile)}
+                  onFocus={() => api.prefetchTab(item.id, profile)}
                   onClick={() => navigate(item.id)}
                   className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium transition ${
                     active ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-700 hover:bg-slate-100'
@@ -254,9 +270,7 @@ export function App() {
           </div>
         </aside>
 
-        {/* Main Workspace Column */}
         <div className="flex min-w-0 flex-1 flex-col">
-          {/* Top Bar */}
           <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur-xs">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
@@ -283,7 +297,7 @@ export function App() {
 
               <div className="flex flex-wrap items-center gap-2">
                 <label className="flex items-center gap-1.5 text-xs text-slate-600">
-                  <span className="hidden sm:inline font-medium">โปรไฟล์:</span>
+                  <span className="hidden font-medium sm:inline">โปรไฟล์:</span>
                   <select
                     value={profile}
                     onChange={(e) => setProfile(e.target.value)}
@@ -298,7 +312,7 @@ export function App() {
                 </label>
 
                 <label className="flex items-center gap-1.5 text-xs text-slate-600">
-                  <span className="hidden sm:inline font-medium">สิทธิ์จำลอง:</span>
+                  <span className="hidden font-medium sm:inline">สิทธิ์จำลอง:</span>
                   <select
                     value={role}
                     onChange={(e) => handleRoleChange(e.target.value as AccountRole)}
@@ -335,7 +349,6 @@ export function App() {
               </div>
             </div>
 
-            {/* Mobile horizontal quick-nav pill strip */}
             <div className="mt-2.5 flex gap-1.5 overflow-x-auto pb-1 md:hidden">
               {NAV_ITEMS.map((item) => {
                 const active = activeTab === item.id;
@@ -343,6 +356,8 @@ export function App() {
                   <button
                     key={item.id}
                     type="button"
+                    onMouseEnter={() => api.prefetchTab(item.id, profile)}
+                    onFocus={() => api.prefetchTab(item.id, profile)}
                     onClick={() => navigate(item.id)}
                     className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
                       active ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'
@@ -355,12 +370,14 @@ export function App() {
             </div>
           </header>
 
-          {/* Main Content */}
-          <main className="mx-auto w-full max-w-7xl flex-1 p-4 sm:p-6">{renderPage()}</main>
+          <main className="mx-auto w-full max-w-7xl flex-1 p-4 sm:p-6">
+            <ErrorBoundary resetKey={`${activeTab}-${profile}-${role}`}>
+              <Suspense fallback={<PageSkeleton />}>{renderPage()}</Suspense>
+            </ErrorBoundary>
+          </main>
         </div>
       </div>
 
-      {/* Optional Login Modal */}
       {loginOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">

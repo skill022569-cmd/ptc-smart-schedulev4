@@ -1,25 +1,57 @@
 import { useEffect, useState } from 'react';
-import { Download, Search } from 'lucide-react';
+import { Download, RefreshCw, Search } from 'lucide-react';
 import { DAY_NAMES_TH, formatSlotTimeTh } from '@ptc/shared';
+import { PageSkeleton } from '../components/PageSkeleton';
 import { api } from '../lib/api';
 import type { ScheduleWorkspacePayload } from '../types/ui';
 
 type ViewKind = 'group' | 'teacher' | 'room' | 'master';
 
 export function TimetableViewsPage({ profile }: { profile: string }) {
-  const [data, setData] = useState<ScheduleWorkspacePayload | null>(null);
+  const cachedInit = api.getCachedScheduleLatest(profile);
+  const [data, setData] = useState<ScheduleWorkspacePayload | null>(() => cachedInit);
+  const [loading, setLoading] = useState(() => !cachedInit);
+  const [error, setError] = useState('');
   const [view, setView] = useState<ViewKind>('group');
-  const [targetId, setTargetId] = useState('');
+  const [targetId, setTargetId] = useState(() => cachedInit?.context.studentGroups[0]?.id ?? '');
   const [query, setQuery] = useState('');
 
-  useEffect(() => {
-    void api.scheduleLatest(profile).then((res) => {
+  const load = async (force = false) => {
+    const cached = !force ? api.getCachedScheduleLatest(profile) : null;
+    if (cached) setData(cached);
+    setLoading(!cached);
+    setError('');
+    try {
+      const res = await api.scheduleLatest(profile, force);
       setData(res);
-      if (res.context.studentGroups[0]) setTargetId(res.context.studentGroups[0].id);
-    });
+      setTargetId((prev) => prev || res.context.studentGroups[0]?.id || '');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'ไม่สามารถโหลดตารางสอนได้');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void load();
   }, [profile]);
 
-  if (!data) return <div className="rounded-xl bg-white p-8 text-center text-slate-500">กำลังโหลดมุมมองตาราง...</div>;
+  if (loading && !data) return <PageSkeleton cards={2} />;
+  if (error && !data) {
+    return (
+      <div className="rounded-xl border border-rose-200 bg-white p-6 text-center">
+        <p className="text-sm font-medium text-rose-700">{error}</p>
+        <button
+          type="button"
+          onClick={() => void load(true)}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+        >
+          <RefreshCw className="h-3.5 w-3.5" /> ลองใหม่
+        </button>
+      </div>
+    );
+  }
+  if (!data) return <PageSkeleton cards={2} />;
 
   const offById = new Map(data.context.offerings.map((o) => [o.id, o]));
   const subjById = new Map(data.context.subjects.map((s) => [s.id, s]));

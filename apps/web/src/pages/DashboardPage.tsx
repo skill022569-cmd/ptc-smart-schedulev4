@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Activity, AlertTriangle, CheckCircle2, Layers, Play, RefreshCw, Sparkles, Users } from 'lucide-react';
+import { PageSkeleton } from '../components/PageSkeleton';
 import { api } from '../lib/api';
 import type { DashboardData } from '../types/ui';
 
@@ -9,16 +10,18 @@ interface Props {
 }
 
 export function DashboardPage({ profile, onNavigate }: Props) {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<DashboardData | null>(() => api.getCachedDashboard(profile));
+  const [loading, setLoading] = useState(() => !api.getCachedDashboard(profile));
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (force = false) => {
+    const cached = !force ? api.getCachedDashboard(profile) : null;
+    if (cached) setData(cached);
+    setLoading(!cached);
     setError('');
     try {
-      setData(await api.dashboard(profile));
+      setData(await api.dashboard(profile, force));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -31,10 +34,11 @@ export function DashboardPage({ profile, onNavigate }: Props) {
   }, [profile]);
 
   const quickSolve = async () => {
-    setBusy('กำลังรันจัดตารางอัตโนมัติ (CSP+GA)...');
+    setBusy('กำลังจัดตาราง...');
+    setError('');
     try {
       await api.runSolver({ algorithm: 'csp_ga', profileName: profile, seed: 2026, maxIterations: 10, timeLimitSec: 40 });
-      await load();
+      await load(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -43,7 +47,7 @@ export function DashboardPage({ profile, onNavigate }: Props) {
   };
 
   if (loading && !data) {
-    return <div className="rounded-xl bg-white p-8 text-center text-slate-500 shadow-sm">กำลังโหลดข้อมูลแดชบอร์ด...</div>;
+    return <PageSkeleton cards={4} />;
   }
 
   const hardZero = (data?.report.hardCount ?? 0) === 0 && (data?.counts.scheduledItems ?? 0) > 0;
@@ -61,10 +65,10 @@ export function DashboardPage({ profile, onNavigate }: Props) {
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => void load()}
+            onClick={() => void load(true)}
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            <RefreshCw className="h-4 w-4" /> รีเฟรช
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> รีเฟรช
           </button>
           <button
             disabled={Boolean(busy)}
