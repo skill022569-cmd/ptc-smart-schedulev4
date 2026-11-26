@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import {
   OccupancyIndex,
@@ -17,7 +18,17 @@ import {
   slotOccupancy,
 } from '../db/schema';
 
-const BATCH_SIZE = 500;
+const ITEM_BATCH_SIZE = 100;
+const LINK_BATCH_SIZE = 250;
+
+export function formatMysqlTimestamp(d = new Date()): string {
+  return d.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+export function safeUuid(id: string | null | undefined): string | null {
+  if (!id) return null;
+  return id.slice(0, 36);
+}
 
 /**
  * Convert `ScheduleItem[]` into `SlotOccupancy[]` following the exact `slot_occupancy` rules
@@ -84,6 +95,60 @@ export function buildSlotOccupancyRows(
   return occ.toRows(versionId, { includeFixedBlocks: false });
 }
 
+export function prepareScheduleVersionPersistence(params: {
+  version: ScheduleVersion;
+  ctx: ScheduleEvaluationContext;
+  items: readonly ScheduleItem[];
+  itemTeachers: readonly ScheduleItemTeacher[];
+}): {
+  version: ScheduleVersion;
+  items: ScheduleItem[];
+  itemTeachers: ScheduleItemTeacher[];
+  occRows: SlotOccupancy[];
+} {
+  const nowTs = formatMysqlTimestamp();
+  const safeVersionId = params.version.id.length <= 36 ? params.version.id : randomUUID();
+  const idMap = new Map<string, string>();
+  const persistedItems: ScheduleItem[] = params.items.map((item) => {
+    const newId = randomUUID();
+    idMap.set(item.id, newId);
+    return {
+      ...item,
+      id: newId,
+      versionId: safeVersionId,
+      updatedBy: safeUuid(item.updatedBy),
+      updatedAt: item.updatedAt ?? nowTs,
+    };
+  });
+
+  const seenLinks = new Set<string>();
+  const persistedTeachers: ScheduleItemTeacher[] = [];
+  for (const it of params.itemTeachers) {
+    const mappedItemId = idMap.get(it.itemId);
+    if (!mappedItemId) continue;
+    const key = `${mappedItemId}|${it.staffId}`;
+    if (seenLinks.has(key)) continue;
+    seenLinks.add(key);
+    persistedTeachers.push({ itemId: mappedItemId, staffId: it.staffId });
+  }
+
+  const occRows = buildSlotOccupancyRows(safeVersionId, params.ctx, persistedItems, persistedTeachers);
+  const persistedVersion: ScheduleVersion = {
+    ...params.version,
+    id: safeVersionId,
+    parentVersionId: safeUuid(params.version.parentVersionId),
+    createdBy: safeUuid(params.version.createdBy),
+    createdAt: params.version.createdAt ?? nowTs,
+  };
+
+  return {
+    version: persistedVersion,
+    items: persistedItems,
+    itemTeachers: persistedTeachers,
+    occRows,
+  };
+}
+
 /**
  * Persist a complete `schedule_version`, its `schedule_items`, `schedule_item_teachers`,
  * and `slot_occupancy` inside a single TiDB transaction (enforcing `uq_no_clash` at DB level).
@@ -96,32 +161,35 @@ export async function saveScheduleVersionAtomic(params: {
   auditAccountId?: string | null;
   auditAction?: string;
 }): Promise<{ versionId: string; itemCount: number; occupancyCount: number }> {
-  const { version, ctx, items, itemTeachers } = params;
-  const occRows = buildSlotOccupancyRows(version.id, ctx, items, itemTeachers);
+  const prepared = prepareScheduleVersionPersistence(params);
 
   await db.transaction(async (tx) => {
-    await tx.insert(scheduleVersions).values(version as never);
-    for (let i = 0; i < items.length; i += BATCH_SIZE) {
-      await tx.insert(scheduleItems).values(items.slice(i, i + BATCH_SIZE) as never);
+    await tx.insert(scheduleVersions).values(prepared.version as never);
+    for (let i = 0; i < prepared.items.length; i += ITEM_BATCH_SIZE) {
+      await tx.insert(scheduleItems).values(prepared.items.slice(i, i + ITEM_BATCH_SIZE) as never);
     }
-    for (let i = 0; i < itemTeachers.length; i += BATCH_SIZE) {
-      await tx.insert(scheduleItemTeachers).values(itemTeachers.slice(i, i + BATCH_SIZE) as never);
+    for (let i = 0; i < prepared.itemTeachers.length; i += LINK_BATCH_SIZE) {
+      await tx.insert(scheduleItemTeachers).values(prepared.itemTeachers.slice(i, i + LINK_BATCH_SIZE) as never);
     }
-    for (let i = 0; i < occRows.length; i += BATCH_SIZE) {
-      await tx.insert(slotOccupancy).values(occRows.slice(i, i + BATCH_SIZE) as never);
+    for (let i = 0; i < prepared.occRows.length; i += LINK_BATCH_SIZE) {
+      await tx.insert(slotOccupancy).values(prepared.occRows.slice(i, i + LINK_BATCH_SIZE) as never);
     }
     await tx.insert(auditLogs).values({
-      id: `audit:${version.id}:${Date.now()}`,
-      accountId: params.auditAccountId ?? null,
+      id: randomUUID(),
+      accountId: safeUuid(params.auditAccountId),
       action: params.auditAction ?? 'create_schedule_version',
       entity: 'schedule_versions',
-      entityId: version.id,
+      entityId: prepared.version.id,
       beforeData: null,
-      afterData: { name: version.name, source: version.source, itemCount: items.length },
+      afterData: { name: prepared.version.name, source: prepared.version.source, itemCount: prepared.items.length },
     });
   });
 
-  return { versionId: version.id, itemCount: items.length, occupancyCount: occRows.length };
+  return {
+    versionId: prepared.version.id,
+    itemCount: prepared.items.length,
+    occupancyCount: prepared.occRows.length,
+  };
 }
 
 /**
@@ -153,8 +221,8 @@ export async function updateScheduleItemAtomic(params: {
     isLocked: params.patch.isLocked !== undefined ? params.patch.isLocked : existing.isLocked,
     status: params.patch.status !== undefined ? params.patch.status : existing.status,
     rowVersion: (existing.rowVersion ?? 1) + 1,
-    updatedBy: params.updatedBy ?? 'scheduler',
-    updatedAt: null,
+    updatedBy: safeUuid(params.updatedBy) ?? 'scheduler',
+    updatedAt: formatMysqlTimestamp(),
   };
 
   const nextTeachers: ScheduleItemTeacher[] =
@@ -182,6 +250,7 @@ export async function updateScheduleItemAtomic(params: {
         status: updated.status,
         rowVersion: updated.rowVersion,
         updatedBy: updated.updatedBy,
+        updatedAt: updated.updatedAt,
       })
       .where(eq(scheduleItems.id, updated.id));
 
@@ -189,8 +258,8 @@ export async function updateScheduleItemAtomic(params: {
       await tx.insert(slotOccupancy).values(singleOcc as never);
     }
     await tx.insert(auditLogs).values({
-      id: `audit:move:${updated.id}:${Date.now()}`,
-      accountId: params.updatedBy ?? null,
+      id: randomUUID(),
+      accountId: safeUuid(params.updatedBy),
       action: 'move_item',
       entity: 'schedule_items',
       entityId: updated.id,

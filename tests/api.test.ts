@@ -8,7 +8,10 @@ import { runAgenticPipeline } from '../apps/server/src/engine';
 import { exportTimetableCsv } from '../apps/server/src/services/export/csv';
 import { exportTimetableExcel } from '../apps/server/src/services/export/excel';
 import { exportTimetablePdf } from '../apps/server/src/services/export/pdf';
-import { buildSlotOccupancyRows } from '../apps/server/src/services/occupancy.service';
+import {
+  buildSlotOccupancyRows,
+  prepareScheduleVersionPersistence,
+} from '../apps/server/src/services/occupancy.service';
 
 function loadQ01(): ScenarioDataset {
   return JSON.parse(readFileSync(path.resolve(process.cwd(), 'scenarios', 'Q01.json'), 'utf8')) as ScenarioDataset;
@@ -69,6 +72,75 @@ describe('Phase 5 — Exports, Slot Occupancy Builder & Express REST API', () =>
       expect(prevJson.validation.stats.errorCount).toBe(0);
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('remaps long solver item IDs to <=36-char UUIDs across versions, teachers, occupancy, and timestamps', () => {
+    const q01 = loadQ01();
+    const baseCtx = createEvaluationContext({ ...q01.tables, constraint_configs: [] }, { profileName: 'competition' });
+    const run = runAgenticPipeline({ ctx: baseCtx, algorithm: 'csp_ga', seed: 42, maxIterations: 8 });
+    expect(run.items.length).toBeGreaterThan(0);
+
+    const syntheticLongItems = run.items.map((item, idx) =>
+      idx === 0
+        ? {
+            ...item,
+            id: `item:task:${'a1b2c3d4-e5f6-7890-abcd-ef1234567890'}:0:${'b1b2c3d4-e5f6-7890-abcd-ef1234567890'}`,
+          }
+        : item,
+    );
+    const firstOldId = run.items[0]!.id;
+    const syntheticTeachers = run.itemTeachers.map((it) =>
+      it.itemId === firstOldId ? { ...it, itemId: syntheticLongItems[0]!.id } : it,
+    );
+
+    const prep1 = prepareScheduleVersionPersistence({
+      version: {
+        id: 'ver:test:1',
+        termId: baseCtx.term.id,
+        name: 'Test V1',
+        source: 'run',
+        status: 'published',
+        parentVersionId: null,
+        createdBy: null,
+        createdAt: null,
+      },
+      ctx: baseCtx,
+      items: syntheticLongItems,
+      itemTeachers: syntheticTeachers,
+    });
+    const prep2 = prepareScheduleVersionPersistence({
+      version: {
+        id: 'ver:test:2',
+        termId: baseCtx.term.id,
+        name: 'Test V2',
+        source: 'run',
+        status: 'published',
+        parentVersionId: null,
+        createdBy: null,
+        createdAt: null,
+      },
+      ctx: baseCtx,
+      items: syntheticLongItems,
+      itemTeachers: syntheticTeachers,
+    });
+
+    const ids1 = new Set(prep1.items.map((i) => i.id));
+    const ids2 = new Set(prep2.items.map((i) => i.id));
+    expect(ids1.size).toBe(prep1.items.length);
+    for (const item of prep1.items) {
+      expect(item.id.length).toBeLessThanOrEqual(36);
+      expect(item.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+      expect(ids2.has(item.id)).toBe(false);
+    }
+    expect(prep1.version.createdAt).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+    expect(prep1.itemTeachers.length).toBe(syntheticTeachers.length);
+    for (const it of prep1.itemTeachers) {
+      expect(ids1.has(it.itemId)).toBe(true);
+    }
+    expect(prep1.occRows.length).toBeGreaterThan(0);
+    for (const occ of prep1.occRows) {
+      expect(ids1.has(occ.itemId)).toBe(true);
     }
   });
 });

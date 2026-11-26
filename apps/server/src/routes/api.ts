@@ -50,8 +50,8 @@ function strParam(v: string | string[] | undefined): string {
   return Array.isArray(v) ? (v[0] ?? '') : (v ?? '');
 }
 
-function parseTimestamp(d = new Date()): Date {
-  return d;
+function parseTimestamp(d = new Date()): string {
+  return d.toISOString().slice(0, 19).replace('T', ' ');
 }
 
 const RunSchema = z.object({
@@ -241,7 +241,7 @@ export function createApiRouter(): Router {
           status: 'published',
           parentVersionId: null,
           createdBy: req.user?.accountId ?? null,
-          createdAt: null,
+          createdAt: parseTimestamp(),
         },
         ctx: ws.ctx,
         items: pipe.items,
@@ -357,7 +357,7 @@ export function createApiRouter(): Router {
         status: pipe.report.hardCount === 0 ? 'published' : 'draft',
         parentVersionId: ws.activeVersion?.id ?? null,
         createdBy: req.user?.accountId ?? null,
-        createdAt: null,
+        createdAt: parseTimestamp(),
       },
       ctx: ws.ctx,
       items: pipe.items,
@@ -491,10 +491,11 @@ export function createApiRouter(): Router {
       const qualitySummary = buildQualitySummary4D(nextWs.ctx, report);
       res.json({ item: updated, report, qualitySummary });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const causeMsg = (err as { cause?: { message?: string } } | null)?.cause?.message ?? '';
+      const msg = causeMsg || (err instanceof Error ? err.message : String(err));
       const isClash = msg.includes('uq_no_clash') || msg.includes('Duplicate entry');
       res.status(isClash ? 409 : 400).json({
-        error: isClash ? 'ฐานข้อมูลปฏิเสธการย้ายเนื่องจากพบคาบชน (uq_no_clash)' : msg,
+        error: isClash ? 'ฐานข้อมูลปฏิเสธการย้ายเนื่องจากพบคาบชน (uq_no_clash)' : msg.slice(0, 300),
       });
     }
   });
@@ -531,7 +532,7 @@ export function createApiRouter(): Router {
       mode: parsed.data.mode,
       description: parsed.data.description,
       isActive: true,
-      createdAt: null,
+      createdAt: parseTimestamp(),
     };
     await db.insert(challengeRules).values(rule as never);
     res.json({ rule });
@@ -610,7 +611,7 @@ export function createApiRouter(): Router {
         status: afterReport.hardCount === 0 ? 'published' : 'draft',
         parentVersionId: ws.activeVersion?.id ?? null,
         createdBy: req.user?.accountId ?? null,
-        createdAt: null,
+        createdAt: parseTimestamp(),
       },
       ctx: impact.modifiedCtx,
       items: itemsWithXai,

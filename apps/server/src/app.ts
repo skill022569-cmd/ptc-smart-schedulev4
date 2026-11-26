@@ -19,9 +19,10 @@ export function createApp(): Express {
   app.use('/api', createApiRouter());
 
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+    const causeMsg = (err as { cause?: { message?: string } } | null)?.cause?.message;
     const message = err instanceof Error ? err.message : 'Internal server error';
     console.error('[API Error]', err);
-    res.status(500).json({ error: message });
+    res.status(500).json({ error: causeMsg ? `${causeMsg}` : message.slice(0, 300) });
   });
 
   return app;
