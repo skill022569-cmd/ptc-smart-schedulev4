@@ -8,32 +8,38 @@ export function BenchmarkPage() {
   const [preset, setPreset] = useState<'quick' | 'full'>('quick');
   const [results, setResults] = useState<BenchmarkResultRow[]>([]);
   const [running, setRunning] = useState(false);
+  const [progress, setProgress] = useState('');
   const [err, setErr] = useState('');
 
   const run = async () => {
     setRunning(true);
     setErr('');
+    setResults([]);
     try {
-      const payload =
-        preset === 'quick'
-          ? {
-              algorithms: ['greedy', 'csp_ga'],
-              profiles: ['competition', 'teacher_first'],
-              seeds: [101, 202],
-              maxIterations: 6,
-            }
-          : {
-              algorithms: ['greedy', 'csp_ga', 'csp_sa'],
-              profiles: ['competition', 'teacher_first', 'room_first'],
-              seeds: [101, 202, 303],
-              maxIterations: 8,
-            };
-      const res = await api.runBenchmark(payload);
-      setResults(res.results);
+      const algorithms = preset === 'quick' ? ['greedy', 'csp_ga'] : ['greedy', 'csp_ga', 'csp_sa'];
+      const profiles = preset === 'quick' ? ['competition', 'teacher_first'] : ['competition', 'teacher_first', 'room_first'];
+      const seeds = preset === 'quick' ? [101, 202] : [101, 202, 303];
+      const maxIterations = preset === 'quick' ? 4 : 6;
+      const tasks: Array<{ algorithm: string; profile: string }> = [];
+      for (const profile of profiles) {
+        for (const algorithm of algorithms) tasks.push({ algorithm, profile });
+      }
+      for (let idx = 0; idx < tasks.length; idx++) {
+        const t = tasks[idx]!;
+        setProgress(`กำลังรัน ${idx + 1}/${tasks.length}: ${t.algorithm} (${t.profile})...`);
+        const res = await api.runBenchmark({
+          algorithms: [t.algorithm],
+          profiles: [t.profile],
+          seeds,
+          maxIterations,
+        });
+        setResults((prev) => [...prev, ...res.results]);
+      }
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
       setRunning(false);
+      setProgress('');
     }
   };
 
@@ -62,7 +68,7 @@ export function BenchmarkPage() {
             <option value="full">โหมดเต็ม (3 Seeds · 3 โปรไฟล์)</option>
           </select>
           <button disabled={running} onClick={() => void run()} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
-            <BarChart3 className="h-4 w-4" /> {running ? 'กำลังรัน Benchmark...' : 'รัน Benchmark'}
+            <BarChart3 className="h-4 w-4" /> {progress || (running ? 'กำลังรัน Benchmark...' : 'รัน Benchmark')}
           </button>
         </div>
       </div>

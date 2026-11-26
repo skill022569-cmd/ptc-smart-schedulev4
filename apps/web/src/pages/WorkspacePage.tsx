@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DndContext, useDraggable, useDroppable, type DragEndEvent } from '@dnd-kit/core';
+import {
+  DndContext,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
 import { Lock, RefreshCw, Unlock, Wand2 } from 'lucide-react';
 import { DAY_NAMES_TH, OccupancyIndex, type ScheduleItem, type XaiExplanationEntry } from '@ptc/shared';
 import { PageSkeleton } from '../components/PageSkeleton';
@@ -31,6 +39,13 @@ function DraggableCard({
       onClick={(e) => {
         e.stopPropagation();
         onSelect();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          e.stopPropagation();
+          onSelect();
+        }
       }}
       className={`cursor-grab rounded-lg border p-2 text-xs shadow-xs transition active:cursor-grabbing ${
         selected ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-200' : 'border-slate-200 bg-white hover:border-indigo-300'
@@ -69,6 +84,7 @@ function DroppableCell({
 }
 
 export function WorkspacePage({ profile }: { profile: string }) {
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   const cachedInit = api.getCachedScheduleLatest(profile);
   const [data, setData] = useState<ScheduleWorkspacePayload | null>(() => cachedInit);
   const [loading, setLoading] = useState(() => !cachedInit);
@@ -194,11 +210,21 @@ export function WorkspacePage({ profile }: { profile: string }) {
 
   const days = [1, 2, 3, 4, 5];
   const periods = data.context.timeSlots.map((t) => t.period).sort((a, b) => a - b);
+  const openSlotSet = new Set(
+    data.context.timeSlots.flatMap((t) => (t.openDays ?? []).map((d) => `${d}:${t.period}`)),
+  );
+  const isSlotWindowOpen = (day: number, startPeriod: number, duration: number): boolean => {
+    for (let k = 0; k < duration; k++) {
+      if (!openSlotSet.has(`${day}:${startPeriod + k}`)) return false;
+    }
+    return true;
+  };
 
   const draggingItem = activeDragId ? data.context.items.find((i) => i.id === activeDragId) ?? null : null;
 
   const cellHighlight = (day: number, period: number): 'ok' | 'clash' | 'none' => {
     if (!draggingItem) return 'none';
+    if (!isSlotWindowOpen(day, period, draggingItem.duration)) return 'clash';
     const gIds = occupancy.gByOff.get(draggingItem.offeringId) ?? [];
     const clashes = occupancy.occ.findClashes({
       itemId: draggingItem.id,
@@ -222,6 +248,16 @@ export function WorkspacePage({ profile }: { profile: string }) {
     const [, dStr, pStr] = overId.split(':');
     const dayOfWeek = Number(dStr);
     const startPeriod = Number(pStr);
+    const dragged = data.context.items.find((i) => i.id === itemId);
+    if (dragged && dragged.status === 'scheduled' && dragged.dayOfWeek === dayOfWeek && dragged.startPeriod === startPeriod) {
+      setSelectedItemId(itemId);
+      setFixOptions(null);
+      return;
+    }
+    if (dragged && !isSlotWindowOpen(dayOfWeek, startPeriod, dragged.duration)) {
+      setErr(`ไม่สามารถวาง ${dragged.duration} คาบติดกันในวัน/คาบที่เลือกได้ (เกินเวลาเปิดสอนของวันนั้น)`);
+      return;
+    }
     setErr('');
     setMsg('');
     try {
@@ -301,7 +337,7 @@ export function WorkspacePage({ profile }: { profile: string }) {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
         <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white xl:col-span-3">
-          <DndContext onDragStart={(e) => setActiveDragId(String(e.active.id))} onDragEnd={(e) => void handleDragEnd(e)}>
+          <DndContext sensors={sensors} onDragStart={(e) => setActiveDragId(String(e.active.id))} onDragEnd={(e) => void handleDragEnd(e)}>
             <table className="w-full border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-100 text-slate-700">
