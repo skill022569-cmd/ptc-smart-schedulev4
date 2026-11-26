@@ -342,7 +342,7 @@ export const api = {
       `/api/issues/${encodeURIComponent(id)}/apply`,
       { method: 'POST', body: JSON.stringify({ optionIndex }) },
     ),
-  runBenchmark: (body: { algorithms: string[]; profiles: string[]; seeds: number[]; maxIterations: number }) =>
+  runBenchmark: (body: { algorithms: string[]; profiles: string[]; seeds: number[]; maxIterations: number; timeLimitSec?: number }) =>
     mutateRequest<{ results: BenchmarkResultRow[] }>(
       '/api/benchmark',
       { method: 'POST', body: JSON.stringify(body) },

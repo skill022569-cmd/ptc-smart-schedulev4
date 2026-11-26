@@ -4,6 +4,40 @@ import { BarChart3 } from 'lucide-react';
 import { api } from '../lib/api';
 import type { BenchmarkResultRow } from '../types/ui';
 
+function summarizeStd(nums: number[]): { mean: number; sd: number } {
+  if (nums.length === 0) return { mean: 0, sd: 0 };
+  const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
+  const variance = nums.reduce((s, x) => s + (x - mean) ** 2, 0) / nums.length;
+  return {
+    mean: Math.round(mean * 100) / 100,
+    sd: Math.round(Math.sqrt(variance) * 100) / 100,
+  };
+}
+
+function mergeBenchmarkRow(prev: BenchmarkResultRow[], incoming: BenchmarkResultRow): BenchmarkResultRow[] {
+  const idx = prev.findIndex(
+    (r) => r.algorithm === incoming.algorithm && r.profileName === incoming.profileName,
+  );
+  if (idx === -1) return [...prev, incoming];
+
+  const existing = prev[idx]!;
+  const runs = [...existing.runs, ...incoming.runs];
+  const merged: BenchmarkResultRow = {
+    algorithm: existing.algorithm,
+    profileName: existing.profileName,
+    runs,
+    summary: {
+      durationMs: summarizeStd(runs.map((r) => r.durationMs)),
+      hardCount: summarizeStd(runs.map((r) => r.hardCount)),
+      fitness: summarizeStd(runs.map((r) => r.fitness)),
+      penalty: summarizeStd(runs.map((r) => r.penalty)),
+      teacherSat: summarizeStd(runs.map((r) => r.teacherSat)).mean,
+      roomUtil: summarizeStd(runs.map((r) => r.roomUtil)).mean,
+    },
+  };
+  return prev.map((r, i) => (i === idx ? merged : r));
+}
+
 export function BenchmarkPage() {
   const [preset, setPreset] = useState<'quick' | 'full'>('quick');
   const [results, setResults] = useState<BenchmarkResultRow[]>([]);
@@ -20,20 +54,26 @@ export function BenchmarkPage() {
       const profiles = preset === 'quick' ? ['competition', 'teacher_first'] : ['competition', 'teacher_first', 'room_first'];
       const seeds = preset === 'quick' ? [101, 202] : [101, 202, 303];
       const maxIterations = preset === 'quick' ? 4 : 6;
-      const tasks: Array<{ algorithm: string; profile: string }> = [];
+      const timeLimitSec = preset === 'quick' ? 6 : 8;
+      const jobs: Array<{ algorithm: string; profile: string; seed: number }> = [];
       for (const profile of profiles) {
-        for (const algorithm of algorithms) tasks.push({ algorithm, profile });
+        for (const algorithm of algorithms) {
+          for (const seed of seeds) jobs.push({ algorithm, profile, seed });
+        }
       }
-      for (let idx = 0; idx < tasks.length; idx++) {
-        const t = tasks[idx]!;
-        setProgress(`กำลังรัน ${idx + 1}/${tasks.length}: ${t.algorithm} (${t.profile})...`);
+      for (let idx = 0; idx < jobs.length; idx++) {
+        const job = jobs[idx]!;
+        setProgress(`กำลังรัน ${idx + 1}/${jobs.length}: ${job.algorithm} (${job.profile} #${job.seed})`);
         const res = await api.runBenchmark({
-          algorithms: [t.algorithm],
-          profiles: [t.profile],
-          seeds,
+          algorithms: [job.algorithm],
+          profiles: [job.profile],
+          seeds: [job.seed],
           maxIterations,
+          timeLimitSec,
         });
-        setResults((prev) => [...prev, ...res.results]);
+        for (const row of res.results) {
+          setResults((prev) => mergeBenchmarkRow(prev, row));
+        }
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));

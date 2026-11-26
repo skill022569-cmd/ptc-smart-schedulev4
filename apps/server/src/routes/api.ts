@@ -168,6 +168,7 @@ const BenchmarkSchema = z.object({
   profiles: z.array(z.string()).default(['competition', 'teacher_first', 'room_first']),
   seeds: z.array(z.number().int()).default([101, 202, 303]),
   maxIterations: z.number().int().min(2).max(50).default(10),
+  timeLimitSec: z.coerce.number().int().min(2).max(30).default(10),
 });
 
 function summarizeStd(nums: number[]): { mean: number; sd: number } {
@@ -826,7 +827,7 @@ export function createApiRouter(): Router {
             algorithm,
             seed,
             maxIterations: parsed.data.maxIterations,
-            timeLimitSec: 20,
+            timeLimitSec: parsed.data.timeLimitSec,
             versionId: `bench:${algorithm}:${profileName}:${seed}`,
           });
           runs.push({
