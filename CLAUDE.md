@@ -5,7 +5,9 @@
 - **Monorepo / Repo Name:** `ptc-smart-schedulev4` (`skill022569-cmd/ptc-smart-schedulev4`, public)
 - **Database Name:** `ptc_smart_schedulev4`
 - **External Accounts Rule:** All GitHub repositories and database services (TiDB Serverless, etc.) MUST use `skill02_2569@pticec.ac.th` (`skill022569-cmd`). Never use `skill01_2569@pticec.ac.th` for GitHub or database services (it is solely for Claude Code).
-- **Public Practice Mode:** This project is for competition/practice use — public GitHub repo, open CORS (`CORS_ORIGIN=*`), `PUBLIC_DEMO_MODE=true`, public APIs/test accounts enabled for easy evaluation. Still NEVER commit real `.env` secrets or passwords.
+- **Public Practice Mode:** This project is for competition/practice use — public GitHub repo, open CORS (`CORS_ORIGIN=*`), `PUBLIC_DEMO_MODE=true`, public APIs/test accounts enabled for easy evaluation. Still NEVER commit real `.env` secrets, `LOCAL_CREDENTIALS_NOTE.md`, or passwords.
+- **Database Cluster:** TiDB Cloud Starter (`ptc-smart-schedulev4`, AWS `ap-southeast-1`, Public Endpoint + TLS), database name `ptc_smart_schedulev4`.
+- **Target Deployment Platform:** **Vercel** (frontend + serverless API under `skill022569-cmd` / `skill02_2569@pticec.ac.th`; note Hobby/Pro serverless function duration limits when designing long Solver runs like Q21 in Phases 3/5 — e.g. client/chunked or background execution fallback).
 - **Windows Shell Note:** PowerShell `.ps1` shims are blocked by ExecutionPolicy; use `pnpm.cmd`, `npm.cmd`, `npx.cmd` in PowerShell.
 
 ## Architecture & Tech Stack
@@ -92,9 +94,9 @@ Monorepo using `pnpm` workspaces:
   `S01 STUDENT_GAPS` (10), `S02 SUBJECT_SPREAD` (8), `S03 TIME_PREFERENCE` (5), `S04 ROOM_BEST_FIT` (3), `S05 TEACHER_LUNCH` (5), `S06 TEACHER_LOAD` (6), `S07 MIN_CHANGES` (20), `S08 TEACHER_GAPS`, `S09 THEORY_STREAK`, `S10 ROOM_CHANGES`, `S11 CONTENT_SEQUENCE`, `S12 DAY_SPAN`, `S13 GROUP_DAILY_BALANCE`.
 
 ## 6-Phase Roadmap
-- **Phase 1 (Current):** Monorepo, 30-table Drizzle schema + migration, TiDB TLS client, 7-CSV importer + Column Mapping + cross-file Data Check validator, Q01 & Q21 scenarios + `seed.ts`. (NO Solver or UI screens in Phase 1).
-- **Phase 2:** Constraint Engine (`competition` profile + full catalog) + Unit tests (>=2 pass/fail cases per constraint).
+- **Phase 1 (Done):** Monorepo, 30-table Drizzle schema + migration, TiDB TLS client, 7-CSV importer + Column Mapping + cross-file Data Check validator, Q01 & Q21 scenarios + `seed.ts`.
+- **Phase 2 (Current):** Constraint Engine (`competition` profile + full catalog `H01–H21`, `S01–S13`, `OccupancyIndex`, Thai XAI formatter) + Unit tests (>=2 pass/fail cases per constraint). No Solver/UI yet.
 - **Phase 3:** Solver & Agentic Pipeline (`greedy`, `csp_ga`, Worker Thread, `scheduling_runs`, seeded RNG, Quality Summary).
 - **Phase 4:** Lucky Challenge (`challenge_rules`, Rule Builder), XAI Explainer, Repair Agent (1-click options, Before/After).
-- **Phase 5:** Core UI Screens 1–9, Excel/CSV/PDF (Sarabun font) export, Login + test accounts, mobile responsive, Deploy + docs.
+- **Phase 5:** Core UI Screens 1–9, Excel/CSV/PDF (Sarabun font) export, Login + test accounts, mobile responsive, Vercel Deploy + docs.
 - **Phase 6:** Extra features (Screens 10–13, per-student electives, PDPA).
