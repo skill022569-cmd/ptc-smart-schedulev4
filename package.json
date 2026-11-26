@@ -1,0 +1,21 @@
+{
+  "name": "ptc-smart-schedulev4",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run",
+    "db:generate": "pnpm --filter @ptc/server db:generate",
+    "db:push": "pnpm --filter @ptc/server db:push",
+    "db:migrate": "pnpm --filter @ptc/server db:migrate",
+    "seed": "pnpm --filter @ptc/server seed",
+    "gen:scenarios": "pnpm --filter @ptc/server gen:scenarios"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.7",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.1"
+  }
+}

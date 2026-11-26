@@ -1,0 +1,4176 @@
+{
+  "code": "Q01",
+  "name": "Q01 — แผนกเดียว 4 กลุ่มเรียน (พื้นฐาน)",
+  "description": "ชุดข้อมูลพื้นฐาน: แผนกวิชาเทคโนโลยีสารสนเทศ 1 แผนก, 4 กลุ่มเรียน (ปวช. 2 กลุ่ม พักคาบ 4, ปวส. 2 กลุ่ม พักคาบ 5), ครู 8 คน, ห้อง 6 ห้องใน 2 อาคาร, 5 วัน × 8 คาบ",
+  "schemaVersion": 1,
+  "meta": {
+    "days": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "periodsPerDay": 8,
+    "totalSlots": 40,
+    "lunchPeriodByLevel": {
+      "ปวช.": 4,
+      "ปวส.": 5
+    },
+    "rngSeed": 20260101,
+    "counts": {
+      "terms": 1,
+      "time_slots": 8,
+      "departments": 1,
+      "buildings": 2,
+      "room_types": 7,
+      "rooms": 6,
+      "staff": 8,
+      "accounts": 5,
+      "consent_records": 5,
+      "audit_logs": 0,
+      "student_groups": 4,
+      "subgroups": 2,
+      "students": 136,
+      "subjects": 39,
+      "course_offerings": 39,
+      "offering_groups": 39,
+      "offering_teachers": 40,
+      "elective_enrollments": 0,
+      "fixed_blocks": 1,
+      "teacher_subject_eligibility": 75,
+      "constraint_configs": 68,
+      "schedule_versions": 0,
+      "scheduling_runs": 0,
+      "schedule_items": 0,
+      "schedule_item_teachers": 0,
+      "slot_occupancy": 0,
+      "issue_reports": 0,
+      "schedule_exceptions": 0,
+      "import_jobs": 0,
+      "challenge_rules": 0
+    }
+  },
+  "demoAccounts": [
+    {
+      "username": "admin",
+      "role": "admin",
+      "password": "admin1234"
+    },
+    {
+      "username": "scheduler",
+      "role": "scheduler",
+      "password": "scheduler1234"
+    },
+    {
+      "username": "teacher",
+      "role": "teacher",
+      "password": "teacher1234"
+    },
+    {
+      "username": "student",
+      "role": "student",
+      "password": "student1234"
+    },
+    {
+      "username": "viewer",
+      "role": "viewer",
+      "password": "viewer1234"
+    }
+  ],
+  "tables": {
+    "terms": [
+      {
+        "id": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "academicYear": 2569,
+        "semester": 2,
+        "startDate": "2026-11-02",
+        "endDate": "2027-03-12"
+      }
+    ],
+    "time_slots": [
+      {
+        "id": "277e7171-be16-58e8-82e6-7501e6ec9e1f",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "period": 1,
+        "startTime": "08:00:00",
+        "endTime": "09:00:00",
+        "shift": "day",
+        "openDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "id": "bd4b162f-867e-5694-b4c4-6c6ab79afdd5",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "period": 2,
+        "startTime": "09:00:00",
+        "endTime": "10:00:00",
+        "shift": "day",
+        "openDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "id": "55b75963-eb86-5919-8399-e6d72a581459",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "period": 3,
+        "startTime": "10:00:00",
+        "endTime": "11:00:00",
+        "shift": "day",
+        "openDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "id": "0d72533a-3333-5f8f-9074-bab6b146edc1",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "period": 4,
+        "startTime": "11:00:00",
+        "endTime": "12:00:00",
+        "shift": "day",
+        "openDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "id": "d2577a63-28f0-5b2e-86b1-1e0e8bfc20b2",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "period": 5,
+        "startTime": "12:00:00",
+        "endTime": "13:00:00",
+        "shift": "day",
+        "openDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "id": "a43e79cf-431a-5c17-b37c-d2097e860046",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "period": 6,
+        "startTime": "13:00:00",
+        "endTime": "14:00:00",
+        "shift": "day",
+        "openDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "id": "f127baef-1011-5928-ae72-866a8b234ea1",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "period": 7,
+        "startTime": "14:00:00",
+        "endTime": "15:00:00",
+        "shift": "day",
+        "openDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "id": "048fc8c3-b8b7-5f3e-b3cb-dad156f82037",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "period": 8,
+        "startTime": "15:00:00",
+        "endTime": "16:00:00",
+        "shift": "day",
+        "openDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    ],
+    "departments": [
+      {
+        "id": "fd7eb0dd-b7ea-5a8d-89e5-f0e06f6d2fb3",
+        "code": "IT",
+        "name": "แผนกวิชาเทคโนโลยีสารสนเทศ"
+      }
+    ],
+    "buildings": [
+      {
+        "id": "e8807ce8-8452-592a-96fc-2ebae1685c8c",
+        "code": "1",
+        "name": "อาคาร 1 อาคารเทคโนโลยีสารสนเทศ"
+      },
+      {
+        "id": "c9480502-b9e9-5b3e-afa9-2099eb0ab5d9",
+        "code": "2",
+        "name": "อาคาร 2 อาคารเรียนรวม"
+      }
+    ],
+    "room_types": [
+      {
+        "id": "17886eaa-4da3-5416-9d1c-bad0b8f01ee0",
+        "code": "theory",
+        "name": "ห้องเรียนทฤษฎี",
+        "isLab": false
+      },
+      {
+        "id": "d91d6a4e-d2bc-5d23-9e10-8782a1a7129a",
+        "code": "lecture_hall",
+        "name": "ห้องบรรยายรวม",
+        "isLab": false
+      },
+      {
+        "id": "0e88fac0-b8a9-5ef9-b4cb-6bd0a33d85e8",
+        "code": "lab_com",
+        "name": "ห้องปฏิบัติการคอมพิวเตอร์",
+        "isLab": true
+      },
+      {
+        "id": "5fb710e8-914b-540a-af9e-a92b8f14e704",
+        "code": "lab_network",
+        "name": "ห้องปฏิบัติการเครือข่าย",
+        "isLab": true
+      },
+      {
+        "id": "1905e340-51c5-5b3e-a6ed-66e2b3df6413",
+        "code": "lab_ai",
+        "name": "ห้องปฏิบัติการปัญญาประดิษฐ์",
+        "isLab": true
+      },
+      {
+        "id": "3e59ed35-86bf-5f95-91e7-0428740ba204",
+        "code": "lab_graphic",
+        "name": "ห้องปฏิบัติการกราฟิก",
+        "isLab": true
+      },
+      {
+        "id": "6acbe573-8726-5a11-8490-0bce1e3bf70c",
+        "code": "activity_yard",
+        "name": "ลานกิจกรรม",
+        "isLab": false
+      }
+    ],
+    "rooms": [
+      {
+        "id": "328d12d2-ce62-5175-a291-46e1107ffdd5",
+        "roomCode": "1-101",
+        "buildingId": "e8807ce8-8452-592a-96fc-2ebae1685c8c",
+        "roomTypeId": "17886eaa-4da3-5416-9d1c-bad0b8f01ee0",
+        "capacity": 40,
+        "allowMultiGroup": false,
+        "features": [
+          "projector",
+          "whiteboard"
+        ],
+        "unavailableSlots": null
+      },
+      {
+        "id": "fde47047-a053-5ad6-951a-d84b104487f2",
+        "roomCode": "1-102",
+        "buildingId": "e8807ce8-8452-592a-96fc-2ebae1685c8c",
+        "roomTypeId": "17886eaa-4da3-5416-9d1c-bad0b8f01ee0",
+        "capacity": 40,
+        "allowMultiGroup": false,
+        "features": [
+          "projector",
+          "whiteboard"
+        ],
+        "unavailableSlots": null
+      },
+      {
+        "id": "b38c8eb7-5045-567f-a3f1-f75d350fdf2d",
+        "roomCode": "1-103",
+        "buildingId": "e8807ce8-8452-592a-96fc-2ebae1685c8c",
+        "roomTypeId": "0e88fac0-b8a9-5ef9-b4cb-6bd0a33d85e8",
+        "capacity": 40,
+        "allowMultiGroup": false,
+        "features": [
+          "projector",
+          "air_conditioner",
+          "computers"
+        ],
+        "unavailableSlots": null
+      },
+      {
+        "id": "ebff6009-e375-552e-907f-1249b3dd177d",
+        "roomCode": "2-101",
+        "buildingId": "c9480502-b9e9-5b3e-afa9-2099eb0ab5d9",
+        "roomTypeId": "17886eaa-4da3-5416-9d1c-bad0b8f01ee0",
+        "capacity": 45,
+        "allowMultiGroup": false,
+        "features": [
+          "projector",
+          "whiteboard"
+        ],
+        "unavailableSlots": null
+      },
+      {
+        "id": "23cf0377-f58f-5758-8dce-7f6f68c6d3eb",
+        "roomCode": "2-102",
+        "buildingId": "c9480502-b9e9-5b3e-afa9-2099eb0ab5d9",
+        "roomTypeId": "17886eaa-4da3-5416-9d1c-bad0b8f01ee0",
+        "capacity": 45,
+        "allowMultiGroup": false,
+        "features": [
+          "projector",
+          "whiteboard"
+        ],
+        "unavailableSlots": null
+      },
+      {
+        "id": "3922ff70-a015-534a-b3ed-fdd43f12388e",
+        "roomCode": "2-103",
+        "buildingId": "c9480502-b9e9-5b3e-afa9-2099eb0ab5d9",
+        "roomTypeId": "5fb710e8-914b-540a-af9e-a92b8f14e704",
+        "capacity": 40,
+        "allowMultiGroup": false,
+        "features": [
+          "projector",
+          "air_conditioner",
+          "computers",
+          "network_rack"
+        ],
+        "unavailableSlots": null
+      }
+    ],
+    "staff": [
+      {
+        "id": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "employeeCode": "T001",
+        "fullName": "นางสาวชนิดา ธนสาร",
+        "departmentId": "fd7eb0dd-b7ea-5a8d-89e5-f0e06f6d2fb3",
+        "position": "ครูชำนาญการ",
+        "staffType": "teacher",
+        "phoneEncrypted": null,
+        "maxDailyPeriods": 6,
+        "maxConsecutive": 3,
+        "maxWeeklyPeriods": 24,
+        "dayOff": null,
+        "availableSlots": null,
+        "unavailableSlots": null
+      },
+      {
+        "id": "0933a68e-6cad-54f4-9506-99ce04176753",
+        "employeeCode": "T002",
+        "fullName": "นายกิตติพงษ์ มีสุข",
+        "departmentId": "fd7eb0dd-b7ea-5a8d-89e5-f0e06f6d2fb3",
+        "position": "ครู",
+        "staffType": "teacher",
+        "phoneEncrypted": null,
+        "maxDailyPeriods": 6,
+        "maxConsecutive": 3,
+        "maxWeeklyPeriods": 24,
+        "dayOff": null,
+        "availableSlots": null,
+        "unavailableSlots": null
+      },
+      {
+        "id": "e2e65094-b274-5dc0-8562-294a9589dad3",
+        "employeeCode": "T003",
+        "fullName": "นางกมลชนก พรหมมา",
+        "departmentId": "fd7eb0dd-b7ea-5a8d-89e5-f0e06f6d2fb3",
+        "position": "ครูชำนาญการพิเศษ",
+        "staffType": "teacher",
+        "phoneEncrypted": null,
+        "maxDailyPeriods": 6,
+        "maxConsecutive": 3,
+        "maxWeeklyPeriods": 24,
+        "dayOff": null,
+        "availableSlots": null,
+        "unavailableSlots": null
+      },
+      {
+        "id": "50161fb9-a2f2-5f22-90e8-59071f499ae0",
+        "employeeCode": "T004",
+        "fullName": "นายสมชาย ศักดิ์ดี",
+        "departmentId": "fd7eb0dd-b7ea-5a8d-89e5-f0e06f6d2fb3",
+        "position": "ครู",
+        "staffType": "teacher",
+        "phoneEncrypted": null,
+        "maxDailyPeriods": 6,
+        "maxConsecutive": 3,
+        "maxWeeklyPeriods": 24,
+        "dayOff": null,
+        "availableSlots": null,
+        "unavailableSlots": null
+      },
+      {
+        "id": "749e145e-0576-5bc8-9182-a86fc903f85e",
+        "employeeCode": "T005",
+        "fullName": "นายกิตติพงษ์ จันทร์เพ็ญ",
+        "departmentId": "fd7eb0dd-b7ea-5a8d-89e5-f0e06f6d2fb3",
+        "position": "หัวหน้าแผนกวิชาเทคโนโลยีสารสนเทศ",
+        "staffType": "teacher",
+        "phoneEncrypted": null,
+        "maxDailyPeriods": 6,
+        "maxConsecutive": 3,
+        "maxWeeklyPeriods": 24,
+        "dayOff": null,
+        "availableSlots": null,
+        "unavailableSlots": null
+      },
+      {
+        "id": "bb116494-3158-56e3-b845-b7cad2ae2757",
+        "employeeCode": "T006",
+        "fullName": "นางสาวอัญชลี บุญมี",
+        "departmentId": "fd7eb0dd-b7ea-5a8d-89e5-f0e06f6d2fb3",
+        "position": "ครูชำนาญการ",
+        "staffType": "teacher",
+        "phoneEncrypted": null,
+        "maxDailyPeriods": 6,
+        "maxConsecutive": 3,
+        "maxWeeklyPeriods": 24,
+        "dayOff": null,
+        "availableSlots": null,
+        "unavailableSlots": [
+          {
+            "day": 1,
+            "period": 1
+          },
+          {
+            "day": 1,
+            "period": 2
+          }
+        ]
+      },
+      {
+        "id": "89862ee8-361e-5f99-8b4c-2511ac3dbcb6",
+        "employeeCode": "T007",
+        "fullName": "นางนภัสสร วัฒนกุล",
+        "departmentId": "fd7eb0dd-b7ea-5a8d-89e5-f0e06f6d2fb3",
+        "position": "ครู",
+        "staffType": "teacher",
+        "phoneEncrypted": null,
+        "maxDailyPeriods": 6,
+        "maxConsecutive": 3,
+        "maxWeeklyPeriods": 24,
+        "dayOff": null,
+        "availableSlots": null,
+        "unavailableSlots": null
+      },
+      {
+        "id": "1b50e4b3-3103-5a1b-9ecc-0e3c2a045955",
+        "employeeCode": "T008",
+        "fullName": "นายอภิสิทธิ์ จันทร์เพ็ญ",
+        "departmentId": "fd7eb0dd-b7ea-5a8d-89e5-f0e06f6d2fb3",
+        "position": "ครูผู้ช่วย",
+        "staffType": "teacher",
+        "phoneEncrypted": null,
+        "maxDailyPeriods": 6,
+        "maxConsecutive": 3,
+        "maxWeeklyPeriods": 24,
+        "dayOff": null,
+        "availableSlots": null,
+        "unavailableSlots": null
+      }
+    ],
+    "accounts": [
+      {
+        "id": "0ac20a43-d078-51fe-bb15-3623bc5d4a89",
+        "username": "admin",
+        "passwordHash": "scrypt$16384$8$1$kpbuj5ZHkpxaRHEsEP1Ohw==$L78KgtaqkU3j/VnYqC74Ayblz9Ffp3hLrdhwBbi2HJE=",
+        "role": "admin",
+        "staffId": null,
+        "studentId": null,
+        "lastLoginAt": null
+      },
+      {
+        "id": "d81b1bee-7d91-582c-985d-30852d63296e",
+        "username": "scheduler",
+        "passwordHash": "scrypt$16384$8$1$fuPpb8/zAXGEozyJu4KAbw==$A8vAzhk/yvcFBV1MHBcA7KChlsvQXCKHbwHCECXD13I=",
+        "role": "scheduler",
+        "staffId": "749e145e-0576-5bc8-9182-a86fc903f85e",
+        "studentId": null,
+        "lastLoginAt": null
+      },
+      {
+        "id": "e047eb5f-51eb-5f77-b7e4-4c57b2fb3f9f",
+        "username": "teacher",
+        "passwordHash": "scrypt$16384$8$1$6lvtL/CdxGySn6VRybF1XQ==$yIfF5ltH0xQ9/uh9PJlvXKweJXLyF0Bq2/pW2XyRcGM=",
+        "role": "teacher",
+        "staffId": "749e145e-0576-5bc8-9182-a86fc903f85e",
+        "studentId": null,
+        "lastLoginAt": null
+      },
+      {
+        "id": "93967f42-920c-536c-9c2e-66e91ad0ed14",
+        "username": "student",
+        "passwordHash": "scrypt$16384$8$1$ePsCxPif6KlkFeP+W1MtdA==$DLK9pp2nKenVSBnCDVpsHj0GNDEjgmky5oWyNhYR8fY=",
+        "role": "student",
+        "staffId": null,
+        "studentId": "e63f31da-87ab-508f-8607-808a0502ea1b",
+        "lastLoginAt": null
+      },
+      {
+        "id": "c5ba72aa-d901-53fd-b261-f3bccf3be196",
+        "username": "viewer",
+        "passwordHash": "scrypt$16384$8$1$6C59HXbxm3WuZFGZLSf4Eg==$Anl3ADoc2QtrHEJGr/USitsx+ugvUjoyopXvwbHoDoA=",
+        "role": "viewer",
+        "staffId": null,
+        "studentId": null,
+        "lastLoginAt": null
+      }
+    ],
+    "consent_records": [
+      {
+        "id": "b229f65d-36a1-543b-8b9d-739fa4c90805",
+        "accountId": "0ac20a43-d078-51fe-bb15-3623bc5d4a89",
+        "policyVersion": "PDPA-2569-v1",
+        "consentedAt": "2026-11-01 08:00:00",
+        "withdrawnAt": null
+      },
+      {
+        "id": "ceaa1251-179d-5982-93ae-0c028b55142c",
+        "accountId": "d81b1bee-7d91-582c-985d-30852d63296e",
+        "policyVersion": "PDPA-2569-v1",
+        "consentedAt": "2026-11-01 08:00:00",
+        "withdrawnAt": null
+      },
+      {
+        "id": "953462ab-fcde-5227-a150-87ed90349451",
+        "accountId": "e047eb5f-51eb-5f77-b7e4-4c57b2fb3f9f",
+        "policyVersion": "PDPA-2569-v1",
+        "consentedAt": "2026-11-01 08:00:00",
+        "withdrawnAt": null
+      },
+      {
+        "id": "76b03b8d-0176-5e1c-a070-15fcb341c535",
+        "accountId": "93967f42-920c-536c-9c2e-66e91ad0ed14",
+        "policyVersion": "PDPA-2569-v1",
+        "consentedAt": "2026-11-01 08:00:00",
+        "withdrawnAt": null
+      },
+      {
+        "id": "38ed4900-1647-581a-afcf-96837ff4460c",
+        "accountId": "c5ba72aa-d901-53fd-b261-f3bccf3be196",
+        "policyVersion": "PDPA-2569-v1",
+        "consentedAt": "2026-11-01 08:00:00",
+        "withdrawnAt": null
+      }
+    ],
+    "audit_logs": [],
+    "student_groups": [
+      {
+        "id": "72979890-072a-5638-af04-22e7e8670059",
+        "groupCode": "IT-ปวช.1/1",
+        "departmentId": "fd7eb0dd-b7ea-5a8d-89e5-f0e06f6d2fb3",
+        "level": "ปวช.",
+        "yearNo": 1,
+        "programType": "ปกติ",
+        "studentCount": 40,
+        "lunchPeriod": 4,
+        "allowedDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "allowedShift": "day",
+        "unavailableSlots": null
+      },
+      {
+        "id": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "groupCode": "IT-ปวช.2/1",
+        "departmentId": "fd7eb0dd-b7ea-5a8d-89e5-f0e06f6d2fb3",
+        "level": "ปวช.",
+        "yearNo": 2,
+        "programType": "ปกติ",
+        "studentCount": 36,
+        "lunchPeriod": 4,
+        "allowedDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "allowedShift": "day",
+        "unavailableSlots": null
+      },
+      {
+        "id": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "groupCode": "IT-ปวส.1/1",
+        "departmentId": "fd7eb0dd-b7ea-5a8d-89e5-f0e06f6d2fb3",
+        "level": "ปวส.",
+        "yearNo": 1,
+        "programType": "ปกติ",
+        "studentCount": 32,
+        "lunchPeriod": 5,
+        "allowedDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "allowedShift": "day",
+        "unavailableSlots": null
+      },
+      {
+        "id": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "groupCode": "IT-ปวส.2/1",
+        "departmentId": "fd7eb0dd-b7ea-5a8d-89e5-f0e06f6d2fb3",
+        "level": "ปวส.",
+        "yearNo": 2,
+        "programType": "ปกติ",
+        "studentCount": 28,
+        "lunchPeriod": 5,
+        "allowedDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "allowedShift": "day",
+        "unavailableSlots": [
+          {
+            "day": 5,
+            "period": 7
+          },
+          {
+            "day": 5,
+            "period": 8
+          }
+        ]
+      }
+    ],
+    "subgroups": [
+      {
+        "id": "7730ab7c-ba3f-5a14-95f4-8eeba423265a",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "code": "A",
+        "studentCount": 20
+      },
+      {
+        "id": "bf331a4d-a818-5a73-bde8-efaa027793e4",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "code": "B",
+        "studentCount": 20
+      }
+    ],
+    "students": [
+      {
+        "id": "e63f31da-87ab-508f-8607-808a0502ea1b",
+        "studentCode": "692010101",
+        "fullName": "นายวีรพล สายทอง",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "b1b3b213-37ea-5ce8-a434-a5ba88684ef2",
+        "studentCode": "692010102",
+        "fullName": "นางสาวจิราพร รักษาดี",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "ea5221bd-5675-5ef0-b181-220af8fe948d",
+        "studentCode": "692010103",
+        "fullName": "นางสาวอรอุมา มีสุข",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "b0c77e15-25e9-5497-8f56-bb2a0fb75842",
+        "studentCode": "692010104",
+        "fullName": "นายกิตติพงษ์ ใจดี",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "f57bb44e-2c84-5a86-b2a1-0d146e75c5fd",
+        "studentCode": "692010105",
+        "fullName": "นางสาวนภัสสร จันทร์เพ็ญ",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "bf3cb08d-2fcc-5563-a5aa-4ccdb0759401",
+        "studentCode": "692010106",
+        "fullName": "นางสาวณัฐธิดา แก้วประเสริฐ",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "0eb32f4f-1589-574c-ac87-e5ca05664f6d",
+        "studentCode": "692010107",
+        "fullName": "นายธนากร อินทร์แก้ว",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "6b15e16b-057f-50e0-a3f0-69430625664d",
+        "studentCode": "692010108",
+        "fullName": "นายกิตติพงษ์ รุ่งเรือง",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "6781c63f-4f0f-55f0-862f-94ec18940d9c",
+        "studentCode": "692010109",
+        "fullName": "นางสาวศิริพร ทองมา",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "e68129aa-2b2a-51ac-ab28-beec1c572e8f",
+        "studentCode": "692010110",
+        "fullName": "นางสาวรัตนาภรณ์ แก้วประเสริฐ",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "427c150c-44b0-52ec-a692-93d1a22f0864",
+        "studentCode": "692010111",
+        "fullName": "นางสาวกมลชนก ภูมิพัฒน์",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "1ddb46e5-ed40-5236-b960-01e1f78c28b3",
+        "studentCode": "692010112",
+        "fullName": "นางสาววรรณิภา ใจดี",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "ed24841d-fd44-55df-a569-7c7c6297860f",
+        "studentCode": "692010113",
+        "fullName": "นางสาวอัญชลี สุวรรณภูมิ",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "06ff2f39-e45c-51db-825e-d24675d52a6e",
+        "studentCode": "692010114",
+        "fullName": "นายพงศกร นาคสวัสดิ์",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "4e231107-b4f5-57ea-8d71-3f218c84011a",
+        "studentCode": "692010115",
+        "fullName": "นายปิยะพงษ์ เพชรรัตน์",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "53d57334-25db-506b-b85c-199eb1e8737c",
+        "studentCode": "692010116",
+        "fullName": "นางสาวอัญชลี ทองคำ",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "f2be8817-7d94-56cb-b86d-a57f86e213a5",
+        "studentCode": "692010117",
+        "fullName": "นางสาวปิยธิดา ใจดี",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "50ec1234-0b5c-533a-acce-1a4d3d86a6d5",
+        "studentCode": "692010118",
+        "fullName": "นางสาวมณีรัตน์ จันทร์เพ็ญ",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "80501176-cff8-5d03-a4e9-6e3cfd63d53f",
+        "studentCode": "692010119",
+        "fullName": "นายธีรเดช รักษาดี",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "861aefc4-8666-5791-b9aa-7e5c12d31382",
+        "studentCode": "692010120",
+        "fullName": "นายสุรเชษฐ์ พรหมมา",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "7730ab7c-ba3f-5a14-95f4-8eeba423265a"
+      },
+      {
+        "id": "e617887a-e8af-54c8-9f52-6ede9b1ce19c",
+        "studentCode": "692010121",
+        "fullName": "นางสาวณัฐธิดา นาคสวัสดิ์",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "41bc6d08-cabf-5f7d-9771-afb00379a1b9",
+        "studentCode": "692010122",
+        "fullName": "นายอภิสิทธิ์ เพชรรัตน์",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "b0e417d9-c093-5ce6-ade3-0d7c9abe6a9c",
+        "studentCode": "692010123",
+        "fullName": "นายวีรพล พรหมมา",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "5b5525a2-b1ec-5295-ba59-c9c7c9013ff2",
+        "studentCode": "692010124",
+        "fullName": "นายปิยะพงษ์ มั่นคง",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "9f90fcbc-9d32-5453-9824-f4f2bd9abedd",
+        "studentCode": "692010125",
+        "fullName": "นางสาวกัญญารัตน์ ทองมา",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "1edb305c-bd32-5e3f-831e-bf07fcfa9821",
+        "studentCode": "692010126",
+        "fullName": "นายณัฐวุฒิ เพชรรัตน์",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "ff70cfb0-0d9f-5391-8e67-fe2ec7cac51c",
+        "studentCode": "692010127",
+        "fullName": "นายศุภชัย ประเสริฐสุข",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "4170a1a2-e224-5d9b-ad62-57e4417b90a7",
+        "studentCode": "692010128",
+        "fullName": "นางสาวศิริพร อินทร์แก้ว",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "a89a230e-fe39-519f-8165-d7836b90c128",
+        "studentCode": "692010129",
+        "fullName": "นางสาวจิราพร ประเสริฐสุข",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "93dc425d-40c9-5362-ae0f-06ccef35bfa2",
+        "studentCode": "692010130",
+        "fullName": "นายอภิสิทธิ์ พรหมมา",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "04cf6e9e-250a-5fd1-afb0-bb95bde21fcb",
+        "studentCode": "692010131",
+        "fullName": "นางสาวชนิดา อินทร์แก้ว",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "740408b9-effd-599d-8790-69303db64022",
+        "studentCode": "692010132",
+        "fullName": "นางสาวมณีรัตน์ ใจดี",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "a13fda8f-d311-5cb4-89a1-3eee45ac1976",
+        "studentCode": "692010133",
+        "fullName": "นางสาวธิดารัตน์ รุ่งเรือง",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "8cdef381-c6e4-5dda-8337-e3a6a88d68ff",
+        "studentCode": "692010134",
+        "fullName": "นางสาวปวีณา นาคสวัสดิ์",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "d0a637bd-6b48-5744-b167-05f8b8381962",
+        "studentCode": "692010135",
+        "fullName": "นางสาวชนิดา เพชรรัตน์",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "9379e5a8-9a0a-5ea8-9bf2-513aee44d213",
+        "studentCode": "692010136",
+        "fullName": "นางสาวกัญญารัตน์ ประเสริฐสุข",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "b8cde9f7-847d-5830-8ce3-d4f2d7249487",
+        "studentCode": "692010137",
+        "fullName": "นายปิยะพงษ์ พิทักษ์ไทย",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "6b3aeeb9-4a7d-564b-9246-dc62296df217",
+        "studentCode": "692010138",
+        "fullName": "นางสาวนภัสสร อินทร์แก้ว",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "6f3c45ca-d4b7-589b-94e5-d2c43c73bab5",
+        "studentCode": "692010139",
+        "fullName": "นางสาวศิริพร อินทร์แก้ว",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "44f186b0-7fe1-5b24-91b6-9e26efd4951f",
+        "studentCode": "692010140",
+        "fullName": "นายกฤษดา บุญมี",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059",
+        "subgroupId": "bf331a4d-a818-5a73-bde8-efaa027793e4"
+      },
+      {
+        "id": "b4e51897-fce2-5d2a-a26f-0a4e9ab905c6",
+        "studentCode": "682010201",
+        "fullName": "นางสาวจิราพร เพชรรัตน์",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "a1828f8a-7775-58cf-8aea-14a521cc9176",
+        "studentCode": "682010202",
+        "fullName": "นางสาวสุภาพร พรหมมา",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "395f414d-6f03-5218-a197-7a1138e8e12c",
+        "studentCode": "682010203",
+        "fullName": "นางสาวกมลชนก พิทักษ์ไทย",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "539d3d4c-b115-5594-812b-c020fafdf11f",
+        "studentCode": "682010204",
+        "fullName": "นางสาววรรณิภา สายทอง",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "d5410654-2530-565a-8789-3688f72d140f",
+        "studentCode": "682010205",
+        "fullName": "นายธนากร จันทร์เพ็ญ",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "99ff3bd9-553d-5fb8-b6f3-d8f56133eb54",
+        "studentCode": "682010206",
+        "fullName": "นายชยพล แสงอรุณ",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "f1419338-00b2-5388-a511-900f1e715017",
+        "studentCode": "682010207",
+        "fullName": "นายอนุชา นาคสวัสดิ์",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "172778a9-9358-5059-905e-ea0b63c01ed5",
+        "studentCode": "682010208",
+        "fullName": "นางสาวมณีรัตน์ ทองมา",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "057e5415-55b3-51ef-9cce-ecd74e4e2a21",
+        "studentCode": "682010209",
+        "fullName": "นายวรวุฒิ แสงอรุณ",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "c6cfc7c7-7f20-503d-a5f4-e634d93ca993",
+        "studentCode": "682010210",
+        "fullName": "นางสาวเบญจวรรณ ประเสริฐสุข",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "b6892abb-e585-5dd8-bfd1-d50ebb0f1e72",
+        "studentCode": "682010211",
+        "fullName": "นายกิตติพงษ์ วงศ์ใหญ่",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "434e36e0-2927-5dc1-af06-9448bc52f472",
+        "studentCode": "682010212",
+        "fullName": "นายอภิสิทธิ์ แก้วประเสริฐ",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "a37e705b-69ae-5f66-aad1-93a3d80315d2",
+        "studentCode": "682010213",
+        "fullName": "นายศุภชัย รุ่งเรือง",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "c374ee86-2c44-5f47-b571-3b4c5521e4ca",
+        "studentCode": "682010214",
+        "fullName": "นายพงศกร บุญเรือง",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "19eb066e-c201-5254-9533-1060fbf04742",
+        "studentCode": "682010215",
+        "fullName": "นางสาวชนิดา เพชรรัตน์",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "dc3b28e6-5a9e-59ad-ac0f-750a99a2cf12",
+        "studentCode": "682010216",
+        "fullName": "นายอนุชา รุ่งเรือง",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "8e9eb313-ce04-571f-b0ef-815257d469bd",
+        "studentCode": "682010217",
+        "fullName": "นายปิยะพงษ์ แก้วประเสริฐ",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "58795045-6e77-5bea-8312-07de391e0e39",
+        "studentCode": "682010218",
+        "fullName": "นายธีรเดช พิทักษ์ไทย",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "04cb1859-bb7b-5fc3-adc9-22f1ba49b409",
+        "studentCode": "682010219",
+        "fullName": "นายปิยะพงษ์ สมบูรณ์",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "edc45817-f067-5aca-9bd4-5aa1b3443293",
+        "studentCode": "682010220",
+        "fullName": "นายอนุชา วงศ์ใหญ่",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "aa0204fe-d92b-5395-b3c4-8ac3d7c43e39",
+        "studentCode": "682010221",
+        "fullName": "นายอนุชา ทองมา",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "1f3c01a8-6a6f-5063-8103-8d81cb29a8c8",
+        "studentCode": "682010222",
+        "fullName": "นายสุรเชษฐ์ วัฒนกุล",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "88b65658-8aba-5a2d-b525-33b55c7fcaad",
+        "studentCode": "682010223",
+        "fullName": "นายอนุชา สายทอง",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "fbc84515-6528-596b-96c8-2324f29c0a7f",
+        "studentCode": "682010224",
+        "fullName": "นายจักรพันธ์ วงศ์ใหญ่",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "e443d1e2-2141-54ab-8a66-f657f3795da9",
+        "studentCode": "682010225",
+        "fullName": "นางสาวกัญญารัตน์ อินทร์แก้ว",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "6d730a28-fee8-575f-a96f-fb6ab80a133f",
+        "studentCode": "682010226",
+        "fullName": "นางสาวรัตนาภรณ์ สมบูรณ์",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "28fd1cb8-4bce-54c4-9ce3-6e73cd0e4e78",
+        "studentCode": "682010227",
+        "fullName": "นายณัฐพล ทองคำ",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "11dad30a-7996-57f2-8e9e-284da9366322",
+        "studentCode": "682010228",
+        "fullName": "นายธีรเดช พิทักษ์ไทย",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "aa43bc48-5e6f-5541-ab79-c4015124940f",
+        "studentCode": "682010229",
+        "fullName": "นายณัฐวุฒิ นาคสวัสดิ์",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "9cb2b094-873b-532c-96ef-6922fe2c91d0",
+        "studentCode": "682010230",
+        "fullName": "นางสาวสุภาพร พิทักษ์ไทย",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "dcaa5600-dede-590f-96ae-578b5720fc61",
+        "studentCode": "682010231",
+        "fullName": "นางสาวอัญชลี ธนสาร",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "8c124767-dece-5e49-a0bc-89671766a4b7",
+        "studentCode": "682010232",
+        "fullName": "นางสาวศิริพร รักษาดี",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "ecea1b26-c48f-5717-941d-ce042386671c",
+        "studentCode": "682010233",
+        "fullName": "นางสาวชนิดา ศรีสุข",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "0226a282-aebc-5f09-a7e5-8d4492ed96ec",
+        "studentCode": "682010234",
+        "fullName": "นางสาวจิราพร ศรีสุข",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "9603c86e-3566-5f85-b8d3-760be8cfd816",
+        "studentCode": "682010235",
+        "fullName": "นางสาวกมลชนก สุวรรณภูมิ",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "7a2d8a24-c609-5e8f-853d-a873746d4804",
+        "studentCode": "682010236",
+        "fullName": "นางสาวธิดารัตน์ พิทักษ์ไทย",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856",
+        "subgroupId": null
+      },
+      {
+        "id": "1bcd9c34-1386-53e0-ab10-8dd20b1edf9a",
+        "studentCode": "693010301",
+        "fullName": "นางสาวอรอุมา บุญมี",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "ac316945-aa0d-5bc1-8f2d-c2c49c004586",
+        "studentCode": "693010302",
+        "fullName": "นายกฤษดา ภูมิพัฒน์",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "33f02da9-c24c-5e08-a064-93b4f8cc06c6",
+        "studentCode": "693010303",
+        "fullName": "นางสาวมณีรัตน์ บุญเรือง",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "4dcaf261-db92-5817-bb00-ee8caf7e083a",
+        "studentCode": "693010304",
+        "fullName": "นายชยพล ภูมิพัฒน์",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "932920e3-337e-58f7-a87f-9049386890f3",
+        "studentCode": "693010305",
+        "fullName": "นายศุภชัย ทองมา",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "02fb1296-58ee-5064-82c4-2f322eca1609",
+        "studentCode": "693010306",
+        "fullName": "นายณัฐวุฒิ วงศ์ใหญ่",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "4f9020a8-7953-5b97-b54a-dcc09c7e4717",
+        "studentCode": "693010307",
+        "fullName": "นายอนุชา รุ่งเรือง",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "88470f4e-41d7-518a-af47-8ac6bb7b1ae4",
+        "studentCode": "693010308",
+        "fullName": "นายธนากร นาคสวัสดิ์",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "1718eaa8-8f1a-560d-af7b-82ce213451c0",
+        "studentCode": "693010309",
+        "fullName": "นางสาวเบญจวรรณ แสงอรุณ",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "45888709-1efb-5b1b-8550-89057fb0ad9d",
+        "studentCode": "693010310",
+        "fullName": "นายอนุชา มั่นคง",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "ef572d52-efb4-5a02-9c8e-5d666b6a02f5",
+        "studentCode": "693010311",
+        "fullName": "นางสาวพรทิพย์ เพชรรัตน์",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "4ec67d20-cf52-54b7-9111-f433b04ce225",
+        "studentCode": "693010312",
+        "fullName": "นายสมชาย มีสุข",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "9b8b059e-3c11-5ae7-88dc-1c0e980474dd",
+        "studentCode": "693010313",
+        "fullName": "นางสาวเบญจวรรณ แสงอรุณ",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "8d9313f1-d181-57d4-8b5c-30bcaacf5b15",
+        "studentCode": "693010314",
+        "fullName": "นางสาวเบญจวรรณ รุ่งเรือง",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "adc5eb78-06ed-56fc-be66-6ab30a2f818f",
+        "studentCode": "693010315",
+        "fullName": "นางสาวกัญญารัตน์ วงศ์ใหญ่",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "9872dfad-de95-5a3c-9a0b-d72765e1cb72",
+        "studentCode": "693010316",
+        "fullName": "นางสาวปิยธิดา มีสุข",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "3442de75-0c00-5dce-a04a-3836a8dc5588",
+        "studentCode": "693010317",
+        "fullName": "นางสาวอรอุมา นาคสวัสดิ์",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "7c41df92-0f46-5421-9516-4c01949bbdde",
+        "studentCode": "693010318",
+        "fullName": "นางสาวเบญจวรรณ รุ่งเรือง",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "986d7430-2f10-5805-abab-937778bb4fb6",
+        "studentCode": "693010319",
+        "fullName": "นางสาวนภัสสร พรหมมา",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "1493fec6-1691-5057-8f96-afa9077969c6",
+        "studentCode": "693010320",
+        "fullName": "นางสาวกมลชนก บุญมี",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "1efff9ac-1af0-55f7-8304-2135e81c8d55",
+        "studentCode": "693010321",
+        "fullName": "นายอภิสิทธิ์ อินทร์แก้ว",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "2f73cc25-8721-5ff1-8c52-2ba7bfd09112",
+        "studentCode": "693010322",
+        "fullName": "นางสาวปวีณา รักษาดี",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "30e7e459-3575-5e4c-8830-35c4a81d7170",
+        "studentCode": "693010323",
+        "fullName": "นางสาวกัญญารัตน์ บุญมี",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "95aeceed-bd32-59f1-89b6-3a298f25cf99",
+        "studentCode": "693010324",
+        "fullName": "นางสาวกัญญารัตน์ พิทักษ์ไทย",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "ced52670-3800-51ed-b63a-eb11663e1c96",
+        "studentCode": "693010325",
+        "fullName": "นายธีรเดช รุ่งเรือง",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "75a09074-a461-5356-9407-d7b0710ddd2f",
+        "studentCode": "693010326",
+        "fullName": "นางสาวศิริพร พรหมมา",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "c8b8775a-527f-51fe-a16a-30aa13ac43a0",
+        "studentCode": "693010327",
+        "fullName": "นางสาวพิมพ์ชนก ใจดี",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "6a4ed81e-7dca-5240-9935-edf72434c4d4",
+        "studentCode": "693010328",
+        "fullName": "นางสาวรัตนาภรณ์ พิทักษ์ไทย",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "faec483b-1b8f-5a0d-b0be-998052c0513d",
+        "studentCode": "693010329",
+        "fullName": "นางสาวพรทิพย์ นาคสวัสดิ์",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "61d615c1-8e48-54c3-9582-10df4e8ae963",
+        "studentCode": "693010330",
+        "fullName": "นางสาวกมลชนก พิทักษ์ไทย",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "12d17eac-c64c-521f-b43e-76b8241298f9",
+        "studentCode": "693010331",
+        "fullName": "นายศุภชัย มีสุข",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "19d12361-64d5-5368-9056-5d110dee0eb5",
+        "studentCode": "693010332",
+        "fullName": "นายกฤษดา ภูมิพัฒน์",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037",
+        "subgroupId": null
+      },
+      {
+        "id": "85d9b460-c714-57f3-9c04-acab61d86077",
+        "studentCode": "683010401",
+        "fullName": "นายภานุวัฒน์ ศรีวงศ์",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "335c46ce-4a0e-52a3-aa0a-42bc6b3f1aae",
+        "studentCode": "683010402",
+        "fullName": "นางสาวนภัสสร จันทร์เพ็ญ",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "be7c62d3-d31f-5dda-9a13-e87e6d5c24b4",
+        "studentCode": "683010403",
+        "fullName": "นายพงศกร สายทอง",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "3d8e5a2d-7dd6-5c6e-a268-4587d928c7c1",
+        "studentCode": "683010404",
+        "fullName": "นางสาวณัฐธิดา ใจดี",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "2d37348f-0350-505f-b661-8e9787e16976",
+        "studentCode": "683010405",
+        "fullName": "นายสุรเชษฐ์ นาคสวัสดิ์",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "f9476b32-964a-5953-b416-1f8540cd5ac1",
+        "studentCode": "683010406",
+        "fullName": "นางสาวเบญจวรรณ วัฒนกุล",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "4c0e46f4-2253-58e0-89c0-08f71ec67b70",
+        "studentCode": "683010407",
+        "fullName": "นายธนากร นาคสวัสดิ์",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "dd569e0e-685c-56d1-8516-193782fdcb3d",
+        "studentCode": "683010408",
+        "fullName": "นางสาวอรอุมา ทองคำ",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "ea42268c-eb82-5058-b152-3295926de192",
+        "studentCode": "683010409",
+        "fullName": "นายเกียรติศักดิ์ อินทร์แก้ว",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "075d1dc0-937c-5c31-b3bc-2933718d0d6e",
+        "studentCode": "683010410",
+        "fullName": "นายศุภชัย เจริญผล",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "4087bb28-36b6-5e66-a3d1-37446e528274",
+        "studentCode": "683010411",
+        "fullName": "นายกฤษดา แสงอรุณ",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "2889ed47-1e19-5f77-aa45-d555a9a13805",
+        "studentCode": "683010412",
+        "fullName": "นายจักรพันธ์ พิทักษ์ไทย",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "01009bb4-59ae-5b91-bdcf-7545cf15eea1",
+        "studentCode": "683010413",
+        "fullName": "นายเกียรติศักดิ์ วงศ์ใหญ่",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "41327cf1-66ea-5594-b215-970afc3e3a01",
+        "studentCode": "683010414",
+        "fullName": "นายศุภชัย สมบูรณ์",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "86d6b27e-ddc0-5378-9f17-d373997b7611",
+        "studentCode": "683010415",
+        "fullName": "นางสาวปวีณา แสงอรุณ",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "27425c68-0f9a-5d02-9735-96ce613d6d50",
+        "studentCode": "683010416",
+        "fullName": "นางสาวจิราพร ธนสาร",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "e1819d40-2d5a-5cb6-8c23-f6fde23c4dc6",
+        "studentCode": "683010417",
+        "fullName": "นางสาวกัญญารัตน์ ศรีสุข",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "22ff8ab7-1999-5dab-8a44-e9dc827d0ed4",
+        "studentCode": "683010418",
+        "fullName": "นางสาวศิริพร รุ่งเรือง",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "d89262dc-5188-5f79-ac82-c665faf8d739",
+        "studentCode": "683010419",
+        "fullName": "นางสาวอรอุมา จันทร์เพ็ญ",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "026d0135-9782-560c-9133-3e04f1ff35d9",
+        "studentCode": "683010420",
+        "fullName": "นายกฤษดา สายทอง",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "4966f1c6-2ce5-5c4b-a97f-cffb1c5512a2",
+        "studentCode": "683010421",
+        "fullName": "นายวีรพล อินทร์แก้ว",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "ca7f8ca3-8c78-5525-b880-a6cd420c506e",
+        "studentCode": "683010422",
+        "fullName": "นายจักรพันธ์ รุ่งเรือง",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "58b39e73-bacf-53d5-9364-2cd8be69c287",
+        "studentCode": "683010423",
+        "fullName": "นางสาวปวีณา พรหมมา",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "89a27bf8-c39b-5224-a8e9-1e596a48e87c",
+        "studentCode": "683010424",
+        "fullName": "นายอภิสิทธิ์ มีสุข",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "d366cabe-9a70-565a-b295-5a15f2c6bcf0",
+        "studentCode": "683010425",
+        "fullName": "นางสาวพิมพ์ชนก ชัยมงคล",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "882027d3-80df-5b44-949d-2d788a46820f",
+        "studentCode": "683010426",
+        "fullName": "นายชยพล ใจดี",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "58f8bfbe-e582-5794-b40e-c01f8674f47b",
+        "studentCode": "683010427",
+        "fullName": "นางสาวชนิดา สุวรรณภูมิ",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      },
+      {
+        "id": "e7346bc3-5e10-5c27-ac93-cf2c1e0bcabf",
+        "studentCode": "683010428",
+        "fullName": "นายกฤษดา สายทอง",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89",
+        "subgroupId": null
+      }
+    ],
+    "subjects": [
+      {
+        "id": "caf8f095-c9ee-5f9b-909a-010776b19d78",
+        "subjectCode": "20000-1101",
+        "curriculumYear": 2562,
+        "subjectName": "ภาษาไทยพื้นฐาน",
+        "theoryHours": 1,
+        "practiceHours": 0,
+        "credits": 1,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          1
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "0062c40b-0d3f-5281-9d9c-d1c3436ec33d",
+        "subjectCode": "20000-1201",
+        "curriculumYear": 2562,
+        "subjectName": "ภาษาอังกฤษในชีวิตจริง",
+        "theoryHours": 0,
+        "practiceHours": 2,
+        "credits": 1,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "f90e164f-314b-5c86-8b52-360a09f21b5f",
+        "subjectCode": "20000-1401",
+        "curriculumYear": 2562,
+        "subjectName": "คณิตศาสตร์พื้นฐานอาชีพ",
+        "theoryHours": 2,
+        "practiceHours": 0,
+        "credits": 2,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "morning"
+      },
+      {
+        "id": "d0a9aefe-0553-51b8-a665-2a2d9e112ff0",
+        "subjectCode": "20000-1301",
+        "curriculumYear": 2562,
+        "subjectName": "วิทยาศาสตร์เพื่อพัฒนาทักษะชีวิต",
+        "theoryHours": 1,
+        "practiceHours": 2,
+        "credits": 2,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          3
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "f4b0d5a0-b8e2-55a8-8045-755d266a263a",
+        "subjectCode": "20000-1501",
+        "curriculumYear": 2562,
+        "subjectName": "หน้าที่พลเมืองและศีลธรรม",
+        "theoryHours": 1,
+        "practiceHours": 0,
+        "credits": 1,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          1
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "1f54b920-3a54-5306-8064-2abb2d7d90d1",
+        "subjectCode": "20000-1601",
+        "curriculumYear": 2562,
+        "subjectName": "การพัฒนาสุขภาพ",
+        "theoryHours": 0,
+        "practiceHours": 2,
+        "credits": 1,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2
+        ],
+        "mustBeConsecutive": true,
+        "timePreference": "afternoon"
+      },
+      {
+        "id": "b126c894-615c-5c9e-8bac-717d724239cb",
+        "subjectCode": "20001-1001",
+        "curriculumYear": 2562,
+        "subjectName": "คอมพิวเตอร์และสารสนเทศเพื่องานอาชีพ",
+        "theoryHours": 1,
+        "practiceHours": 2,
+        "credits": 2,
+        "category": "core",
+        "requiredRoomTypeId": "0e88fac0-b8a9-5ef9-b4cb-6bd0a33d85e8",
+        "defaultSplit": [
+          3
+        ],
+        "mustBeConsecutive": true,
+        "timePreference": "any"
+      },
+      {
+        "id": "57eed2ab-ac89-56dc-9b9d-4c23670d9d6c",
+        "subjectCode": "20901-2001",
+        "curriculumYear": 2562,
+        "subjectName": "คอมพิวเตอร์และการบำรุงรักษา",
+        "theoryHours": 1,
+        "practiceHours": 3,
+        "credits": 2,
+        "category": "core",
+        "requiredRoomTypeId": "0e88fac0-b8a9-5ef9-b4cb-6bd0a33d85e8",
+        "defaultSplit": [
+          4
+        ],
+        "mustBeConsecutive": true,
+        "timePreference": "any"
+      },
+      {
+        "id": "5fbdccd3-1d06-5039-a683-0a2a9f22cc4c",
+        "subjectCode": "20901-2002",
+        "curriculumYear": 2562,
+        "subjectName": "หลักการเขียนโปรแกรม",
+        "theoryHours": 2,
+        "practiceHours": 2,
+        "credits": 3,
+        "category": "core",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2,
+          2
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "d380d19a-bb30-5494-8d12-c543f3a1101d",
+        "subjectCode": "20901-2003",
+        "curriculumYear": 2562,
+        "subjectName": "ระบบปฏิบัติการเบื้องต้น",
+        "theoryHours": 1,
+        "practiceHours": 3,
+        "credits": 2,
+        "category": "core",
+        "requiredRoomTypeId": "5fb710e8-914b-540a-af9e-a92b8f14e704",
+        "defaultSplit": [
+          4
+        ],
+        "mustBeConsecutive": true,
+        "timePreference": "any"
+      },
+      {
+        "id": "9ae2d5fc-448d-53e8-85a3-45cd007de90a",
+        "subjectCode": "20901-2004",
+        "curriculumYear": 2562,
+        "subjectName": "คณิตศาสตร์คอมพิวเตอร์",
+        "theoryHours": 2,
+        "practiceHours": 2,
+        "credits": 3,
+        "category": "core",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2,
+          2
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "3be608b7-70c1-59af-93c2-b8908dacd21a",
+        "subjectCode": "20000-1102",
+        "curriculumYear": 2562,
+        "subjectName": "ภาษาไทยเพื่ออาชีพ",
+        "theoryHours": 1,
+        "practiceHours": 0,
+        "credits": 1,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          1
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "b3fed5df-9f54-5a33-b818-cc1dad2e3362",
+        "subjectCode": "20000-1202",
+        "curriculumYear": 2562,
+        "subjectName": "ภาษาอังกฤษสื่อสารในชีวิตประจำวัน",
+        "theoryHours": 0,
+        "practiceHours": 2,
+        "credits": 1,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "ca1a44a0-498a-50d9-b39c-6739fcc8da68",
+        "subjectCode": "20000-1402",
+        "curriculumYear": 2562,
+        "subjectName": "คณิตศาสตร์และสถิติเพื่องานอาชีพ",
+        "theoryHours": 2,
+        "practiceHours": 0,
+        "credits": 2,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "morning"
+      },
+      {
+        "id": "366e71a0-4aa6-5147-bdbe-6e162d8d45df",
+        "subjectCode": "20000-1302",
+        "curriculumYear": 2562,
+        "subjectName": "วิทยาศาสตร์เพื่องานอาชีพ",
+        "theoryHours": 1,
+        "practiceHours": 2,
+        "credits": 2,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          3
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "dcec24ae-cb75-5bbd-93fd-561d7f7f52fb",
+        "subjectCode": "20000-1503",
+        "curriculumYear": 2562,
+        "subjectName": "ประวัติศาสตร์ชาติไทย",
+        "theoryHours": 1,
+        "practiceHours": 0,
+        "credits": 1,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          1
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "bd0d8b24-3264-55f5-ad91-7aaf27357d95",
+        "subjectCode": "20901-2005",
+        "curriculumYear": 2562,
+        "subjectName": "การเขียนโปรแกรมภาษาไพทอน",
+        "theoryHours": 1,
+        "practiceHours": 3,
+        "credits": 2,
+        "category": "core",
+        "requiredRoomTypeId": "0e88fac0-b8a9-5ef9-b4cb-6bd0a33d85e8",
+        "defaultSplit": [
+          4
+        ],
+        "mustBeConsecutive": true,
+        "timePreference": "any"
+      },
+      {
+        "id": "a1d73d52-d9e6-5fa2-9931-4da289a7f398",
+        "subjectCode": "20901-2006",
+        "curriculumYear": 2562,
+        "subjectName": "ระบบฐานข้อมูลเบื้องต้น",
+        "theoryHours": 2,
+        "practiceHours": 2,
+        "credits": 3,
+        "category": "core",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2,
+          2
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "a7e6d58b-5b65-5629-8019-d25e3fa82623",
+        "subjectCode": "20901-2007",
+        "curriculumYear": 2562,
+        "subjectName": "เครือข่ายคอมพิวเตอร์เบื้องต้น",
+        "theoryHours": 1,
+        "practiceHours": 3,
+        "credits": 2,
+        "category": "core",
+        "requiredRoomTypeId": "0e88fac0-b8a9-5ef9-b4cb-6bd0a33d85e8",
+        "defaultSplit": [
+          4
+        ],
+        "mustBeConsecutive": true,
+        "timePreference": "any"
+      },
+      {
+        "id": "744642d8-3800-5528-bf7d-a09e32f53e3c",
+        "subjectCode": "20901-2008",
+        "curriculumYear": 2562,
+        "subjectName": "การออกแบบเว็บไซต์",
+        "theoryHours": 2,
+        "practiceHours": 2,
+        "credits": 3,
+        "category": "core",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2,
+          2
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "51d9e13d-cb48-5035-9653-426beeefaf80",
+        "subjectCode": "30000-1101",
+        "curriculumYear": 2563,
+        "subjectName": "ทักษะภาษาไทยเชิงวิชาชีพ",
+        "theoryHours": 1,
+        "practiceHours": 0,
+        "credits": 1,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          1
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "bbf62282-44f7-5095-aeb9-fbe1d0e29ab7",
+        "subjectCode": "30000-1201",
+        "curriculumYear": 2563,
+        "subjectName": "ภาษาอังกฤษสำหรับการปฏิบัติงาน",
+        "theoryHours": 0,
+        "practiceHours": 2,
+        "credits": 1,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "f8d88ce0-6dae-5ce5-8c01-61f6444d7b37",
+        "subjectCode": "30000-1401",
+        "curriculumYear": 2563,
+        "subjectName": "คณิตศาสตร์เพื่อพัฒนาทักษะการคิด",
+        "theoryHours": 2,
+        "practiceHours": 0,
+        "credits": 2,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "morning"
+      },
+      {
+        "id": "0d7737af-8eb6-5fc6-b3ce-c09b5529d508",
+        "subjectCode": "30000-1301",
+        "curriculumYear": 2563,
+        "subjectName": "วิทยาศาสตร์เพื่องานอาชีพ",
+        "theoryHours": 1,
+        "practiceHours": 2,
+        "credits": 2,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          3
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "f8f49bb3-ac91-5035-b04b-ab5519e2eea8",
+        "subjectCode": "30000-1501",
+        "curriculumYear": 2563,
+        "subjectName": "ทักษะชีวิตเพื่อการทำงาน",
+        "theoryHours": 1,
+        "practiceHours": 0,
+        "credits": 1,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          1
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "11edd4d3-3e7c-5d36-88f6-ee9b2347a797",
+        "subjectCode": "30001-1001",
+        "curriculumYear": 2563,
+        "subjectName": "การบริหารงานคุณภาพในองค์การ",
+        "theoryHours": 2,
+        "practiceHours": 0,
+        "credits": 2,
+        "category": "core",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "f99f8d79-6b11-5998-b70d-67a14206bc78",
+        "subjectCode": "30901-2001",
+        "curriculumYear": 2563,
+        "subjectName": "การวิเคราะห์และออกแบบระบบ",
+        "theoryHours": 1,
+        "practiceHours": 3,
+        "credits": 2,
+        "category": "core",
+        "requiredRoomTypeId": "0e88fac0-b8a9-5ef9-b4cb-6bd0a33d85e8",
+        "defaultSplit": [
+          4
+        ],
+        "mustBeConsecutive": true,
+        "timePreference": "any"
+      },
+      {
+        "id": "dc1139c8-d76f-5de0-8a7f-e0d332437bec",
+        "subjectCode": "30901-2002",
+        "curriculumYear": 2563,
+        "subjectName": "การเขียนโปรแกรมเชิงวัตถุ",
+        "theoryHours": 2,
+        "practiceHours": 2,
+        "credits": 3,
+        "category": "core",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2,
+          2
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "8d80d8f2-27d3-5818-8f7e-b8f47bae041e",
+        "subjectCode": "30901-2003",
+        "curriculumYear": 2563,
+        "subjectName": "การบริหารจัดการเครือข่าย",
+        "theoryHours": 1,
+        "practiceHours": 3,
+        "credits": 2,
+        "category": "core",
+        "requiredRoomTypeId": "5fb710e8-914b-540a-af9e-a92b8f14e704",
+        "defaultSplit": [
+          4
+        ],
+        "mustBeConsecutive": true,
+        "timePreference": "any"
+      },
+      {
+        "id": "22a80b90-890a-5920-8c0f-5f17d6b3ccf7",
+        "subjectCode": "30901-2004",
+        "curriculumYear": 2563,
+        "subjectName": "ระบบฐานข้อมูลขั้นสูง",
+        "theoryHours": 2,
+        "practiceHours": 2,
+        "credits": 3,
+        "category": "core",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2,
+          2
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "ae42eabb-43a4-5331-b0da-2c373fcda518",
+        "subjectCode": "30000-1202",
+        "curriculumYear": 2563,
+        "subjectName": "ภาษาอังกฤษเพื่อการสื่อสารในงานอาชีพ",
+        "theoryHours": 0,
+        "practiceHours": 2,
+        "credits": 1,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "fb754ce2-940a-503d-9eb5-54d0a478cfcb",
+        "subjectCode": "30000-1402",
+        "curriculumYear": 2563,
+        "subjectName": "สถิติและการวางแผนการทดลอง",
+        "theoryHours": 2,
+        "practiceHours": 0,
+        "credits": 2,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "morning"
+      },
+      {
+        "id": "687767ca-26ed-5882-b5cf-dc4a2944d8b7",
+        "subjectCode": "30000-1502",
+        "curriculumYear": 2563,
+        "subjectName": "การพัฒนาตนเองและบุคลิกภาพ",
+        "theoryHours": 1,
+        "practiceHours": 0,
+        "credits": 1,
+        "category": "general",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          1
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "ef2460dd-f3a0-515f-8e9a-9881af4c2314",
+        "subjectCode": "30001-1002",
+        "curriculumYear": 2563,
+        "subjectName": "การเป็นผู้ประกอบการธุรกิจ",
+        "theoryHours": 2,
+        "practiceHours": 0,
+        "credits": 2,
+        "category": "core",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "e3e7d072-26a2-5fba-ab14-545521e03c0e",
+        "subjectCode": "30901-2005",
+        "curriculumYear": 2563,
+        "subjectName": "การเรียนรู้ของเครื่อง",
+        "theoryHours": 1,
+        "practiceHours": 3,
+        "credits": 2,
+        "category": "core",
+        "requiredRoomTypeId": "0e88fac0-b8a9-5ef9-b4cb-6bd0a33d85e8",
+        "defaultSplit": [
+          4
+        ],
+        "mustBeConsecutive": true,
+        "timePreference": "any"
+      },
+      {
+        "id": "8e5c15a3-e561-5c1d-bbb3-a7c91fb2afd7",
+        "subjectCode": "30901-2006",
+        "curriculumYear": 2563,
+        "subjectName": "การประมวลผลคลาวด์",
+        "theoryHours": 2,
+        "practiceHours": 2,
+        "credits": 3,
+        "category": "core",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2,
+          2
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "ecaccfad-c95f-5c47-b615-2acdb9028a24",
+        "subjectCode": "30901-2007",
+        "curriculumYear": 2563,
+        "subjectName": "อินเทอร์เน็ตของสรรพสิ่ง",
+        "theoryHours": 1,
+        "practiceHours": 3,
+        "credits": 2,
+        "category": "core",
+        "requiredRoomTypeId": "0e88fac0-b8a9-5ef9-b4cb-6bd0a33d85e8",
+        "defaultSplit": [
+          4
+        ],
+        "mustBeConsecutive": true,
+        "timePreference": "any"
+      },
+      {
+        "id": "ca61c130-c04f-5f8f-bf6a-72a71bfb363a",
+        "subjectCode": "30901-2008",
+        "curriculumYear": 2563,
+        "subjectName": "การทดสอบซอฟต์แวร์",
+        "theoryHours": 2,
+        "practiceHours": 2,
+        "credits": 3,
+        "category": "core",
+        "requiredRoomTypeId": null,
+        "defaultSplit": [
+          2,
+          2
+        ],
+        "mustBeConsecutive": false,
+        "timePreference": "any"
+      },
+      {
+        "id": "93045889-3e98-5bb5-a95d-2905cd3e020c",
+        "subjectCode": "30901-8501",
+        "curriculumYear": 2563,
+        "subjectName": "โครงการเทคโนโลยีสารสนเทศ",
+        "theoryHours": 0,
+        "practiceHours": 4,
+        "credits": 2,
+        "category": "core",
+        "requiredRoomTypeId": "0e88fac0-b8a9-5ef9-b4cb-6bd0a33d85e8",
+        "defaultSplit": [
+          4
+        ],
+        "mustBeConsecutive": true,
+        "timePreference": "afternoon"
+      }
+    ],
+    "course_offerings": [
+      {
+        "id": "a98841d2-d191-5588-9029-a254b87282ad",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "caf8f095-c9ee-5f9b-909a-010776b19d78",
+        "offeringType": "regular",
+        "periodsPerWeek": 1,
+        "splitPattern": [
+          1
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 40
+      },
+      {
+        "id": "2715ab81-af2f-52d5-99aa-a0e17ddfd276",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "0062c40b-0d3f-5281-9d9c-d1c3436ec33d",
+        "offeringType": "regular",
+        "periodsPerWeek": 2,
+        "splitPattern": [
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 40
+      },
+      {
+        "id": "19d0b026-14b8-5058-be8f-e316b4655325",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "f90e164f-314b-5c86-8b52-360a09f21b5f",
+        "offeringType": "regular",
+        "periodsPerWeek": 2,
+        "splitPattern": [
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 40
+      },
+      {
+        "id": "6f6b0c54-4629-5312-9288-f1d372e226e0",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "d0a9aefe-0553-51b8-a665-2a2d9e112ff0",
+        "offeringType": "regular",
+        "periodsPerWeek": 3,
+        "splitPattern": [
+          3
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 40
+      },
+      {
+        "id": "0d9cfecb-920a-5c0f-935b-cb2258fc9468",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "f4b0d5a0-b8e2-55a8-8045-755d266a263a",
+        "offeringType": "regular",
+        "periodsPerWeek": 1,
+        "splitPattern": [
+          1
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 40
+      },
+      {
+        "id": "38431ae2-66ed-51dc-b5a5-9fe21b78deec",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "1f54b920-3a54-5306-8064-2abb2d7d90d1",
+        "offeringType": "regular",
+        "periodsPerWeek": 2,
+        "splitPattern": [
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 40
+      },
+      {
+        "id": "337327aa-bead-5e79-895e-6e9e283f9bab",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "b126c894-615c-5c9e-8bac-717d724239cb",
+        "offeringType": "regular",
+        "periodsPerWeek": 3,
+        "splitPattern": [
+          3
+        ],
+        "roomTypeId": "0e88fac0-b8a9-5ef9-b4cb-6bd0a33d85e8",
+        "sectionNo": null,
+        "maxStudents": 40
+      },
+      {
+        "id": "405b1357-f93d-5fdc-8329-df13ab23eee3",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "57eed2ab-ac89-56dc-9b9d-4c23670d9d6c",
+        "offeringType": "split",
+        "periodsPerWeek": 4,
+        "splitPattern": [
+          4
+        ],
+        "roomTypeId": "0e88fac0-b8a9-5ef9-b4cb-6bd0a33d85e8",
+        "sectionNo": null,
+        "maxStudents": 20
+      },
+      {
+        "id": "9de5bae6-6a9a-5282-b324-e5110f912228",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "5fbdccd3-1d06-5039-a683-0a2a9f22cc4c",
+        "offeringType": "regular",
+        "periodsPerWeek": 4,
+        "splitPattern": [
+          2,
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 40
+      },
+      {
+        "id": "6ff9867c-06ec-5942-afbc-5e8cba43ae0c",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "d380d19a-bb30-5494-8d12-c543f3a1101d",
+        "offeringType": "regular",
+        "periodsPerWeek": 4,
+        "splitPattern": [
+          4
+        ],
+        "roomTypeId": "5fb710e8-914b-540a-af9e-a92b8f14e704",
+        "sectionNo": null,
+        "maxStudents": 40
+      },
+      {
+        "id": "fb2ece3f-a5c5-5087-b144-152d737f8288",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "9ae2d5fc-448d-53e8-85a3-45cd007de90a",
+        "offeringType": "regular",
+        "periodsPerWeek": 4,
+        "splitPattern": [
+          2,
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 40
+      },
+      {
+        "id": "9d405e77-e552-57d0-a993-848a61054b2a",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "3be608b7-70c1-59af-93c2-b8908dacd21a",
+        "offeringType": "regular",
+        "periodsPerWeek": 1,
+        "splitPattern": [
+          1
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 36
+      },
+      {
+        "id": "7079051d-2e3c-51f2-a68a-b902a41572fb",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "b3fed5df-9f54-5a33-b818-cc1dad2e3362",
+        "offeringType": "regular",
+        "periodsPerWeek": 2,
+        "splitPattern": [
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 36
+      },
+      {
+        "id": "2b8cbd9a-98bb-540b-8e74-09933c7d56a5",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "ca1a44a0-498a-50d9-b39c-6739fcc8da68",
+        "offeringType": "regular",
+        "periodsPerWeek": 2,
+        "splitPattern": [
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 36
+      },
+      {
+        "id": "b0436343-de00-583a-9e06-9ec9e5ec103c",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "366e71a0-4aa6-5147-bdbe-6e162d8d45df",
+        "offeringType": "regular",
+        "periodsPerWeek": 3,
+        "splitPattern": [
+          3
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 36
+      },
+      {
+        "id": "e879ca21-3fb2-56cc-86c3-a4d414e53ec7",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "dcec24ae-cb75-5bbd-93fd-561d7f7f52fb",
+        "offeringType": "regular",
+        "periodsPerWeek": 1,
+        "splitPattern": [
+          1
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 36
+      },
+      {
+        "id": "add2db2a-f5c2-58b8-a876-dbe855b8cfb5",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "bd0d8b24-3264-55f5-ad91-7aaf27357d95",
+        "offeringType": "regular",
+        "periodsPerWeek": 4,
+        "splitPattern": [
+          4
+        ],
+        "roomTypeId": "0e88fac0-b8a9-5ef9-b4cb-6bd0a33d85e8",
+        "sectionNo": null,
+        "maxStudents": 36
+      },
+      {
+        "id": "02637ee6-668b-54d7-8fdb-ab856ba8ff1c",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "a1d73d52-d9e6-5fa2-9931-4da289a7f398",
+        "offeringType": "regular",
+        "periodsPerWeek": 4,
+        "splitPattern": [
+          2,
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 36
+      },
+      {
+        "id": "e3a013a8-aad1-5ea8-a482-d2f16cb81114",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "a7e6d58b-5b65-5629-8019-d25e3fa82623",
+        "offeringType": "regular",
+        "periodsPerWeek": 4,
+        "splitPattern": [
+          4
+        ],
+        "roomTypeId": "0e88fac0-b8a9-5ef9-b4cb-6bd0a33d85e8",
+        "sectionNo": null,
+        "maxStudents": 36
+      },
+      {
+        "id": "e44039c6-9fd6-5cfc-a608-581e85680e4c",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "744642d8-3800-5528-bf7d-a09e32f53e3c",
+        "offeringType": "regular",
+        "periodsPerWeek": 4,
+        "splitPattern": [
+          2,
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 36
+      },
+      {
+        "id": "4dbeda8c-2907-5dc5-b703-d80d330f8761",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "51d9e13d-cb48-5035-9653-426beeefaf80",
+        "offeringType": "regular",
+        "periodsPerWeek": 1,
+        "splitPattern": [
+          1
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 32
+      },
+      {
+        "id": "f1bdb979-1104-59f9-ad09-21715db4f567",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "bbf62282-44f7-5095-aeb9-fbe1d0e29ab7",
+        "offeringType": "regular",
+        "periodsPerWeek": 2,
+        "splitPattern": [
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 32
+      },
+      {
+        "id": "5d9a3504-3687-5aed-a76c-cb1e8024aa30",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "f8d88ce0-6dae-5ce5-8c01-61f6444d7b37",
+        "offeringType": "regular",
+        "periodsPerWeek": 2,
+        "splitPattern": [
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 32
+      },
+      {
+        "id": "e5269707-6f7d-5ac7-ab84-d9a781b7aff8",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "0d7737af-8eb6-5fc6-b3ce-c09b5529d508",
+        "offeringType": "regular",
+        "periodsPerWeek": 3,
+        "splitPattern": [
+          3
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 32
+      },
+      {
+        "id": "f312447b-9145-5491-ac83-68abd0db4849",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "f8f49bb3-ac91-5035-b04b-ab5519e2eea8",
+        "offeringType": "regular",
+        "periodsPerWeek": 1,
+        "splitPattern": [
+          1
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 32
+      },
+      {
+        "id": "82290b21-e1ca-5f5a-9c55-96e3465cf15f",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "11edd4d3-3e7c-5d36-88f6-ee9b2347a797",
+        "offeringType": "regular",
+        "periodsPerWeek": 2,
+        "splitPattern": [
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 32
+      },
+      {
+        "id": "334e02b3-b032-5061-9f47-88c0d106207c",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "f99f8d79-6b11-5998-b70d-67a14206bc78",
+        "offeringType": "regular",
+        "periodsPerWeek": 4,
+        "splitPattern": [
+          4
+        ],
+        "roomTypeId": "0e88fac0-b8a9-5ef9-b4cb-6bd0a33d85e8",
+        "sectionNo": null,
+        "maxStudents": 32
+      },
+      {
+        "id": "1d30b1e4-18fb-53d2-bda0-5583ebb24efa",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "dc1139c8-d76f-5de0-8a7f-e0d332437bec",
+        "offeringType": "regular",
+        "periodsPerWeek": 4,
+        "splitPattern": [
+          2,
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 32
+      },
+      {
+        "id": "b00fdf7f-b5ab-57d1-8569-78b67fd86a47",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "8d80d8f2-27d3-5818-8f7e-b8f47bae041e",
+        "offeringType": "regular",
+        "periodsPerWeek": 4,
+        "splitPattern": [
+          4
+        ],
+        "roomTypeId": "5fb710e8-914b-540a-af9e-a92b8f14e704",
+        "sectionNo": null,
+        "maxStudents": 32
+      },
+      {
+        "id": "688c3232-31de-5e12-bf1c-af634f5c7263",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "22a80b90-890a-5920-8c0f-5f17d6b3ccf7",
+        "offeringType": "regular",
+        "periodsPerWeek": 4,
+        "splitPattern": [
+          2,
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 32
+      },
+      {
+        "id": "c3b18a2b-6d8c-5052-93ee-d57fa7e1a89a",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "ae42eabb-43a4-5331-b0da-2c373fcda518",
+        "offeringType": "regular",
+        "periodsPerWeek": 2,
+        "splitPattern": [
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 28
+      },
+      {
+        "id": "668e5bea-638e-5f9e-bf4f-efb14967683b",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "fb754ce2-940a-503d-9eb5-54d0a478cfcb",
+        "offeringType": "regular",
+        "periodsPerWeek": 2,
+        "splitPattern": [
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 28
+      },
+      {
+        "id": "729ca674-1974-5ca6-83df-a8fefc7d3664",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "687767ca-26ed-5882-b5cf-dc4a2944d8b7",
+        "offeringType": "regular",
+        "periodsPerWeek": 1,
+        "splitPattern": [
+          1
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 28
+      },
+      {
+        "id": "b96552b4-bbf8-50b9-8f33-87235ce2ed2a",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "ef2460dd-f3a0-515f-8e9a-9881af4c2314",
+        "offeringType": "regular",
+        "periodsPerWeek": 2,
+        "splitPattern": [
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 28
+      },
+      {
+        "id": "ec9c9ac8-8cec-59be-b0e0-370afb26ecc5",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "e3e7d072-26a2-5fba-ab14-545521e03c0e",
+        "offeringType": "regular",
+        "periodsPerWeek": 4,
+        "splitPattern": [
+          4
+        ],
+        "roomTypeId": "0e88fac0-b8a9-5ef9-b4cb-6bd0a33d85e8",
+        "sectionNo": null,
+        "maxStudents": 28
+      },
+      {
+        "id": "776e2483-39a9-573d-836c-fb1ef8c1ce32",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "8e5c15a3-e561-5c1d-bbb3-a7c91fb2afd7",
+        "offeringType": "regular",
+        "periodsPerWeek": 4,
+        "splitPattern": [
+          2,
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 28
+      },
+      {
+        "id": "c0ada000-4275-5b36-821b-5dc3ec6eec9c",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "ecaccfad-c95f-5c47-b615-2acdb9028a24",
+        "offeringType": "regular",
+        "periodsPerWeek": 4,
+        "splitPattern": [
+          4
+        ],
+        "roomTypeId": "0e88fac0-b8a9-5ef9-b4cb-6bd0a33d85e8",
+        "sectionNo": null,
+        "maxStudents": 28
+      },
+      {
+        "id": "49f0057d-abf6-5528-816c-1eaf075c34cc",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "ca61c130-c04f-5f8f-bf6a-72a71bfb363a",
+        "offeringType": "regular",
+        "periodsPerWeek": 4,
+        "splitPattern": [
+          2,
+          2
+        ],
+        "roomTypeId": null,
+        "sectionNo": null,
+        "maxStudents": 28
+      },
+      {
+        "id": "bc67c9b0-4c60-57ec-aa3c-9c8a1dba087a",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "subjectId": "93045889-3e98-5bb5-a95d-2905cd3e020c",
+        "offeringType": "regular",
+        "periodsPerWeek": 4,
+        "splitPattern": [
+          4
+        ],
+        "roomTypeId": "0e88fac0-b8a9-5ef9-b4cb-6bd0a33d85e8",
+        "sectionNo": null,
+        "maxStudents": 28
+      }
+    ],
+    "offering_groups": [
+      {
+        "offeringId": "a98841d2-d191-5588-9029-a254b87282ad",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059"
+      },
+      {
+        "offeringId": "2715ab81-af2f-52d5-99aa-a0e17ddfd276",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059"
+      },
+      {
+        "offeringId": "19d0b026-14b8-5058-be8f-e316b4655325",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059"
+      },
+      {
+        "offeringId": "6f6b0c54-4629-5312-9288-f1d372e226e0",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059"
+      },
+      {
+        "offeringId": "0d9cfecb-920a-5c0f-935b-cb2258fc9468",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059"
+      },
+      {
+        "offeringId": "38431ae2-66ed-51dc-b5a5-9fe21b78deec",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059"
+      },
+      {
+        "offeringId": "337327aa-bead-5e79-895e-6e9e283f9bab",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059"
+      },
+      {
+        "offeringId": "405b1357-f93d-5fdc-8329-df13ab23eee3",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059"
+      },
+      {
+        "offeringId": "9de5bae6-6a9a-5282-b324-e5110f912228",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059"
+      },
+      {
+        "offeringId": "6ff9867c-06ec-5942-afbc-5e8cba43ae0c",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059"
+      },
+      {
+        "offeringId": "fb2ece3f-a5c5-5087-b144-152d737f8288",
+        "groupId": "72979890-072a-5638-af04-22e7e8670059"
+      },
+      {
+        "offeringId": "9d405e77-e552-57d0-a993-848a61054b2a",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856"
+      },
+      {
+        "offeringId": "7079051d-2e3c-51f2-a68a-b902a41572fb",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856"
+      },
+      {
+        "offeringId": "2b8cbd9a-98bb-540b-8e74-09933c7d56a5",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856"
+      },
+      {
+        "offeringId": "b0436343-de00-583a-9e06-9ec9e5ec103c",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856"
+      },
+      {
+        "offeringId": "e879ca21-3fb2-56cc-86c3-a4d414e53ec7",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856"
+      },
+      {
+        "offeringId": "add2db2a-f5c2-58b8-a876-dbe855b8cfb5",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856"
+      },
+      {
+        "offeringId": "02637ee6-668b-54d7-8fdb-ab856ba8ff1c",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856"
+      },
+      {
+        "offeringId": "e3a013a8-aad1-5ea8-a482-d2f16cb81114",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856"
+      },
+      {
+        "offeringId": "e44039c6-9fd6-5cfc-a608-581e85680e4c",
+        "groupId": "39853b1f-8949-53f5-8ee6-c6fa48023856"
+      },
+      {
+        "offeringId": "4dbeda8c-2907-5dc5-b703-d80d330f8761",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037"
+      },
+      {
+        "offeringId": "f1bdb979-1104-59f9-ad09-21715db4f567",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037"
+      },
+      {
+        "offeringId": "5d9a3504-3687-5aed-a76c-cb1e8024aa30",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037"
+      },
+      {
+        "offeringId": "e5269707-6f7d-5ac7-ab84-d9a781b7aff8",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037"
+      },
+      {
+        "offeringId": "f312447b-9145-5491-ac83-68abd0db4849",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037"
+      },
+      {
+        "offeringId": "82290b21-e1ca-5f5a-9c55-96e3465cf15f",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037"
+      },
+      {
+        "offeringId": "334e02b3-b032-5061-9f47-88c0d106207c",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037"
+      },
+      {
+        "offeringId": "1d30b1e4-18fb-53d2-bda0-5583ebb24efa",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037"
+      },
+      {
+        "offeringId": "b00fdf7f-b5ab-57d1-8569-78b67fd86a47",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037"
+      },
+      {
+        "offeringId": "688c3232-31de-5e12-bf1c-af634f5c7263",
+        "groupId": "b4b6ac91-1c93-56a0-b1f8-3caf17cb9037"
+      },
+      {
+        "offeringId": "c3b18a2b-6d8c-5052-93ee-d57fa7e1a89a",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89"
+      },
+      {
+        "offeringId": "668e5bea-638e-5f9e-bf4f-efb14967683b",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89"
+      },
+      {
+        "offeringId": "729ca674-1974-5ca6-83df-a8fefc7d3664",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89"
+      },
+      {
+        "offeringId": "b96552b4-bbf8-50b9-8f33-87235ce2ed2a",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89"
+      },
+      {
+        "offeringId": "ec9c9ac8-8cec-59be-b0e0-370afb26ecc5",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89"
+      },
+      {
+        "offeringId": "776e2483-39a9-573d-836c-fb1ef8c1ce32",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89"
+      },
+      {
+        "offeringId": "c0ada000-4275-5b36-821b-5dc3ec6eec9c",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89"
+      },
+      {
+        "offeringId": "49f0057d-abf6-5528-816c-1eaf075c34cc",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89"
+      },
+      {
+        "offeringId": "bc67c9b0-4c60-57ec-aa3c-9c8a1dba087a",
+        "groupId": "5f451d1a-fb31-588e-a02a-0ed85b71df89"
+      }
+    ],
+    "offering_teachers": [
+      {
+        "offeringId": "a98841d2-d191-5588-9029-a254b87282ad",
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "2715ab81-af2f-52d5-99aa-a0e17ddfd276",
+        "staffId": "0933a68e-6cad-54f4-9506-99ce04176753",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "19d0b026-14b8-5058-be8f-e316b4655325",
+        "staffId": "e2e65094-b274-5dc0-8562-294a9589dad3",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "6f6b0c54-4629-5312-9288-f1d372e226e0",
+        "staffId": "50161fb9-a2f2-5f22-90e8-59071f499ae0",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "0d9cfecb-920a-5c0f-935b-cb2258fc9468",
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "38431ae2-66ed-51dc-b5a5-9fe21b78deec",
+        "staffId": "50161fb9-a2f2-5f22-90e8-59071f499ae0",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "337327aa-bead-5e79-895e-6e9e283f9bab",
+        "staffId": "749e145e-0576-5bc8-9182-a86fc903f85e",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "405b1357-f93d-5fdc-8329-df13ab23eee3",
+        "staffId": "bb116494-3158-56e3-b845-b7cad2ae2757",
+        "subgroupCode": "A",
+        "role": "main"
+      },
+      {
+        "offeringId": "405b1357-f93d-5fdc-8329-df13ab23eee3",
+        "staffId": "749e145e-0576-5bc8-9182-a86fc903f85e",
+        "subgroupCode": "B",
+        "role": "main"
+      },
+      {
+        "offeringId": "9de5bae6-6a9a-5282-b324-e5110f912228",
+        "staffId": "89862ee8-361e-5f99-8b4c-2511ac3dbcb6",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "6ff9867c-06ec-5942-afbc-5e8cba43ae0c",
+        "staffId": "1b50e4b3-3103-5a1b-9ecc-0e3c2a045955",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "fb2ece3f-a5c5-5087-b144-152d737f8288",
+        "staffId": "1b50e4b3-3103-5a1b-9ecc-0e3c2a045955",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "9d405e77-e552-57d0-a993-848a61054b2a",
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "7079051d-2e3c-51f2-a68a-b902a41572fb",
+        "staffId": "0933a68e-6cad-54f4-9506-99ce04176753",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "2b8cbd9a-98bb-540b-8e74-09933c7d56a5",
+        "staffId": "e2e65094-b274-5dc0-8562-294a9589dad3",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "b0436343-de00-583a-9e06-9ec9e5ec103c",
+        "staffId": "e2e65094-b274-5dc0-8562-294a9589dad3",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "e879ca21-3fb2-56cc-86c3-a4d414e53ec7",
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "add2db2a-f5c2-58b8-a876-dbe855b8cfb5",
+        "staffId": "bb116494-3158-56e3-b845-b7cad2ae2757",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "02637ee6-668b-54d7-8fdb-ab856ba8ff1c",
+        "staffId": "89862ee8-361e-5f99-8b4c-2511ac3dbcb6",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "e3a013a8-aad1-5ea8-a482-d2f16cb81114",
+        "staffId": "89862ee8-361e-5f99-8b4c-2511ac3dbcb6",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "e44039c6-9fd6-5cfc-a608-581e85680e4c",
+        "staffId": "749e145e-0576-5bc8-9182-a86fc903f85e",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "4dbeda8c-2907-5dc5-b703-d80d330f8761",
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "f1bdb979-1104-59f9-ad09-21715db4f567",
+        "staffId": "0933a68e-6cad-54f4-9506-99ce04176753",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "5d9a3504-3687-5aed-a76c-cb1e8024aa30",
+        "staffId": "50161fb9-a2f2-5f22-90e8-59071f499ae0",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "e5269707-6f7d-5ac7-ab84-d9a781b7aff8",
+        "staffId": "e2e65094-b274-5dc0-8562-294a9589dad3",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "f312447b-9145-5491-ac83-68abd0db4849",
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "82290b21-e1ca-5f5a-9c55-96e3465cf15f",
+        "staffId": "e2e65094-b274-5dc0-8562-294a9589dad3",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "334e02b3-b032-5061-9f47-88c0d106207c",
+        "staffId": "bb116494-3158-56e3-b845-b7cad2ae2757",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "1d30b1e4-18fb-53d2-bda0-5583ebb24efa",
+        "staffId": "bb116494-3158-56e3-b845-b7cad2ae2757",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "b00fdf7f-b5ab-57d1-8569-78b67fd86a47",
+        "staffId": "1b50e4b3-3103-5a1b-9ecc-0e3c2a045955",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "688c3232-31de-5e12-bf1c-af634f5c7263",
+        "staffId": "749e145e-0576-5bc8-9182-a86fc903f85e",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "c3b18a2b-6d8c-5052-93ee-d57fa7e1a89a",
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "668e5bea-638e-5f9e-bf4f-efb14967683b",
+        "staffId": "50161fb9-a2f2-5f22-90e8-59071f499ae0",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "729ca674-1974-5ca6-83df-a8fefc7d3664",
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "b96552b4-bbf8-50b9-8f33-87235ce2ed2a",
+        "staffId": "e2e65094-b274-5dc0-8562-294a9589dad3",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "ec9c9ac8-8cec-59be-b0e0-370afb26ecc5",
+        "staffId": "749e145e-0576-5bc8-9182-a86fc903f85e",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "776e2483-39a9-573d-836c-fb1ef8c1ce32",
+        "staffId": "89862ee8-361e-5f99-8b4c-2511ac3dbcb6",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "c0ada000-4275-5b36-821b-5dc3ec6eec9c",
+        "staffId": "1b50e4b3-3103-5a1b-9ecc-0e3c2a045955",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "49f0057d-abf6-5528-816c-1eaf075c34cc",
+        "staffId": "1b50e4b3-3103-5a1b-9ecc-0e3c2a045955",
+        "subgroupCode": null,
+        "role": "main"
+      },
+      {
+        "offeringId": "bc67c9b0-4c60-57ec-aa3c-9c8a1dba087a",
+        "staffId": "bb116494-3158-56e3-b845-b7cad2ae2757",
+        "subgroupCode": null,
+        "role": "main"
+      }
+    ],
+    "elective_enrollments": [],
+    "fixed_blocks": [
+      {
+        "id": "e1ed96b1-647f-58cd-9358-09be2307322e",
+        "termId": "66c8724d-8bc7-5030-bd8c-207016f98d79",
+        "name": "กิจกรรมองค์การนักวิชาชีพในอนาคตแห่งประเทศไทย (อวท.)",
+        "blockType": "activity",
+        "dayOfWeek": 3,
+        "startPeriod": 7,
+        "duration": 2,
+        "roomId": null,
+        "appliesTo": {
+          "all": true
+        }
+      }
+    ],
+    "teacher_subject_eligibility": [
+      {
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subjectId": "caf8f095-c9ee-5f9b-909a-010776b19d78",
+        "groupId": null
+      },
+      {
+        "staffId": "0933a68e-6cad-54f4-9506-99ce04176753",
+        "subjectId": "caf8f095-c9ee-5f9b-909a-010776b19d78",
+        "groupId": null
+      },
+      {
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subjectId": "0062c40b-0d3f-5281-9d9c-d1c3436ec33d",
+        "groupId": null
+      },
+      {
+        "staffId": "0933a68e-6cad-54f4-9506-99ce04176753",
+        "subjectId": "0062c40b-0d3f-5281-9d9c-d1c3436ec33d",
+        "groupId": null
+      },
+      {
+        "staffId": "e2e65094-b274-5dc0-8562-294a9589dad3",
+        "subjectId": "f90e164f-314b-5c86-8b52-360a09f21b5f",
+        "groupId": null
+      },
+      {
+        "staffId": "50161fb9-a2f2-5f22-90e8-59071f499ae0",
+        "subjectId": "f90e164f-314b-5c86-8b52-360a09f21b5f",
+        "groupId": null
+      },
+      {
+        "staffId": "e2e65094-b274-5dc0-8562-294a9589dad3",
+        "subjectId": "d0a9aefe-0553-51b8-a665-2a2d9e112ff0",
+        "groupId": null
+      },
+      {
+        "staffId": "50161fb9-a2f2-5f22-90e8-59071f499ae0",
+        "subjectId": "d0a9aefe-0553-51b8-a665-2a2d9e112ff0",
+        "groupId": null
+      },
+      {
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subjectId": "f4b0d5a0-b8e2-55a8-8045-755d266a263a",
+        "groupId": null
+      },
+      {
+        "staffId": "50161fb9-a2f2-5f22-90e8-59071f499ae0",
+        "subjectId": "1f54b920-3a54-5306-8064-2abb2d7d90d1",
+        "groupId": null
+      },
+      {
+        "staffId": "749e145e-0576-5bc8-9182-a86fc903f85e",
+        "subjectId": "b126c894-615c-5c9e-8bac-717d724239cb",
+        "groupId": null
+      },
+      {
+        "staffId": "bb116494-3158-56e3-b845-b7cad2ae2757",
+        "subjectId": "b126c894-615c-5c9e-8bac-717d724239cb",
+        "groupId": null
+      },
+      {
+        "staffId": "89862ee8-361e-5f99-8b4c-2511ac3dbcb6",
+        "subjectId": "b126c894-615c-5c9e-8bac-717d724239cb",
+        "groupId": null
+      },
+      {
+        "staffId": "1b50e4b3-3103-5a1b-9ecc-0e3c2a045955",
+        "subjectId": "b126c894-615c-5c9e-8bac-717d724239cb",
+        "groupId": null
+      },
+      {
+        "staffId": "749e145e-0576-5bc8-9182-a86fc903f85e",
+        "subjectId": "57eed2ab-ac89-56dc-9b9d-4c23670d9d6c",
+        "groupId": null
+      },
+      {
+        "staffId": "bb116494-3158-56e3-b845-b7cad2ae2757",
+        "subjectId": "57eed2ab-ac89-56dc-9b9d-4c23670d9d6c",
+        "groupId": null
+      },
+      {
+        "staffId": "bb116494-3158-56e3-b845-b7cad2ae2757",
+        "subjectId": "5fbdccd3-1d06-5039-a683-0a2a9f22cc4c",
+        "groupId": null
+      },
+      {
+        "staffId": "89862ee8-361e-5f99-8b4c-2511ac3dbcb6",
+        "subjectId": "5fbdccd3-1d06-5039-a683-0a2a9f22cc4c",
+        "groupId": null
+      },
+      {
+        "staffId": "89862ee8-361e-5f99-8b4c-2511ac3dbcb6",
+        "subjectId": "d380d19a-bb30-5494-8d12-c543f3a1101d",
+        "groupId": null
+      },
+      {
+        "staffId": "1b50e4b3-3103-5a1b-9ecc-0e3c2a045955",
+        "subjectId": "d380d19a-bb30-5494-8d12-c543f3a1101d",
+        "groupId": null
+      },
+      {
+        "staffId": "1b50e4b3-3103-5a1b-9ecc-0e3c2a045955",
+        "subjectId": "9ae2d5fc-448d-53e8-85a3-45cd007de90a",
+        "groupId": null
+      },
+      {
+        "staffId": "749e145e-0576-5bc8-9182-a86fc903f85e",
+        "subjectId": "9ae2d5fc-448d-53e8-85a3-45cd007de90a",
+        "groupId": null
+      },
+      {
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subjectId": "3be608b7-70c1-59af-93c2-b8908dacd21a",
+        "groupId": null
+      },
+      {
+        "staffId": "0933a68e-6cad-54f4-9506-99ce04176753",
+        "subjectId": "3be608b7-70c1-59af-93c2-b8908dacd21a",
+        "groupId": null
+      },
+      {
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subjectId": "b3fed5df-9f54-5a33-b818-cc1dad2e3362",
+        "groupId": null
+      },
+      {
+        "staffId": "0933a68e-6cad-54f4-9506-99ce04176753",
+        "subjectId": "b3fed5df-9f54-5a33-b818-cc1dad2e3362",
+        "groupId": null
+      },
+      {
+        "staffId": "e2e65094-b274-5dc0-8562-294a9589dad3",
+        "subjectId": "ca1a44a0-498a-50d9-b39c-6739fcc8da68",
+        "groupId": null
+      },
+      {
+        "staffId": "50161fb9-a2f2-5f22-90e8-59071f499ae0",
+        "subjectId": "ca1a44a0-498a-50d9-b39c-6739fcc8da68",
+        "groupId": null
+      },
+      {
+        "staffId": "e2e65094-b274-5dc0-8562-294a9589dad3",
+        "subjectId": "366e71a0-4aa6-5147-bdbe-6e162d8d45df",
+        "groupId": null
+      },
+      {
+        "staffId": "50161fb9-a2f2-5f22-90e8-59071f499ae0",
+        "subjectId": "366e71a0-4aa6-5147-bdbe-6e162d8d45df",
+        "groupId": null
+      },
+      {
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subjectId": "dcec24ae-cb75-5bbd-93fd-561d7f7f52fb",
+        "groupId": null
+      },
+      {
+        "staffId": "749e145e-0576-5bc8-9182-a86fc903f85e",
+        "subjectId": "bd0d8b24-3264-55f5-ad91-7aaf27357d95",
+        "groupId": null
+      },
+      {
+        "staffId": "bb116494-3158-56e3-b845-b7cad2ae2757",
+        "subjectId": "bd0d8b24-3264-55f5-ad91-7aaf27357d95",
+        "groupId": null
+      },
+      {
+        "staffId": "bb116494-3158-56e3-b845-b7cad2ae2757",
+        "subjectId": "a1d73d52-d9e6-5fa2-9931-4da289a7f398",
+        "groupId": null
+      },
+      {
+        "staffId": "89862ee8-361e-5f99-8b4c-2511ac3dbcb6",
+        "subjectId": "a1d73d52-d9e6-5fa2-9931-4da289a7f398",
+        "groupId": null
+      },
+      {
+        "staffId": "89862ee8-361e-5f99-8b4c-2511ac3dbcb6",
+        "subjectId": "a7e6d58b-5b65-5629-8019-d25e3fa82623",
+        "groupId": null
+      },
+      {
+        "staffId": "1b50e4b3-3103-5a1b-9ecc-0e3c2a045955",
+        "subjectId": "a7e6d58b-5b65-5629-8019-d25e3fa82623",
+        "groupId": null
+      },
+      {
+        "staffId": "1b50e4b3-3103-5a1b-9ecc-0e3c2a045955",
+        "subjectId": "744642d8-3800-5528-bf7d-a09e32f53e3c",
+        "groupId": null
+      },
+      {
+        "staffId": "749e145e-0576-5bc8-9182-a86fc903f85e",
+        "subjectId": "744642d8-3800-5528-bf7d-a09e32f53e3c",
+        "groupId": null
+      },
+      {
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subjectId": "51d9e13d-cb48-5035-9653-426beeefaf80",
+        "groupId": null
+      },
+      {
+        "staffId": "0933a68e-6cad-54f4-9506-99ce04176753",
+        "subjectId": "51d9e13d-cb48-5035-9653-426beeefaf80",
+        "groupId": null
+      },
+      {
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subjectId": "bbf62282-44f7-5095-aeb9-fbe1d0e29ab7",
+        "groupId": null
+      },
+      {
+        "staffId": "0933a68e-6cad-54f4-9506-99ce04176753",
+        "subjectId": "bbf62282-44f7-5095-aeb9-fbe1d0e29ab7",
+        "groupId": null
+      },
+      {
+        "staffId": "e2e65094-b274-5dc0-8562-294a9589dad3",
+        "subjectId": "f8d88ce0-6dae-5ce5-8c01-61f6444d7b37",
+        "groupId": null
+      },
+      {
+        "staffId": "50161fb9-a2f2-5f22-90e8-59071f499ae0",
+        "subjectId": "f8d88ce0-6dae-5ce5-8c01-61f6444d7b37",
+        "groupId": null
+      },
+      {
+        "staffId": "e2e65094-b274-5dc0-8562-294a9589dad3",
+        "subjectId": "0d7737af-8eb6-5fc6-b3ce-c09b5529d508",
+        "groupId": null
+      },
+      {
+        "staffId": "50161fb9-a2f2-5f22-90e8-59071f499ae0",
+        "subjectId": "0d7737af-8eb6-5fc6-b3ce-c09b5529d508",
+        "groupId": null
+      },
+      {
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subjectId": "f8f49bb3-ac91-5035-b04b-ab5519e2eea8",
+        "groupId": null
+      },
+      {
+        "staffId": "e2e65094-b274-5dc0-8562-294a9589dad3",
+        "subjectId": "11edd4d3-3e7c-5d36-88f6-ee9b2347a797",
+        "groupId": null
+      },
+      {
+        "staffId": "89862ee8-361e-5f99-8b4c-2511ac3dbcb6",
+        "subjectId": "11edd4d3-3e7c-5d36-88f6-ee9b2347a797",
+        "groupId": null
+      },
+      {
+        "staffId": "749e145e-0576-5bc8-9182-a86fc903f85e",
+        "subjectId": "f99f8d79-6b11-5998-b70d-67a14206bc78",
+        "groupId": null
+      },
+      {
+        "staffId": "bb116494-3158-56e3-b845-b7cad2ae2757",
+        "subjectId": "f99f8d79-6b11-5998-b70d-67a14206bc78",
+        "groupId": null
+      },
+      {
+        "staffId": "bb116494-3158-56e3-b845-b7cad2ae2757",
+        "subjectId": "dc1139c8-d76f-5de0-8a7f-e0d332437bec",
+        "groupId": null
+      },
+      {
+        "staffId": "89862ee8-361e-5f99-8b4c-2511ac3dbcb6",
+        "subjectId": "dc1139c8-d76f-5de0-8a7f-e0d332437bec",
+        "groupId": null
+      },
+      {
+        "staffId": "89862ee8-361e-5f99-8b4c-2511ac3dbcb6",
+        "subjectId": "8d80d8f2-27d3-5818-8f7e-b8f47bae041e",
+        "groupId": null
+      },
+      {
+        "staffId": "1b50e4b3-3103-5a1b-9ecc-0e3c2a045955",
+        "subjectId": "8d80d8f2-27d3-5818-8f7e-b8f47bae041e",
+        "groupId": null
+      },
+      {
+        "staffId": "1b50e4b3-3103-5a1b-9ecc-0e3c2a045955",
+        "subjectId": "22a80b90-890a-5920-8c0f-5f17d6b3ccf7",
+        "groupId": null
+      },
+      {
+        "staffId": "749e145e-0576-5bc8-9182-a86fc903f85e",
+        "subjectId": "22a80b90-890a-5920-8c0f-5f17d6b3ccf7",
+        "groupId": null
+      },
+      {
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subjectId": "ae42eabb-43a4-5331-b0da-2c373fcda518",
+        "groupId": null
+      },
+      {
+        "staffId": "0933a68e-6cad-54f4-9506-99ce04176753",
+        "subjectId": "ae42eabb-43a4-5331-b0da-2c373fcda518",
+        "groupId": null
+      },
+      {
+        "staffId": "e2e65094-b274-5dc0-8562-294a9589dad3",
+        "subjectId": "fb754ce2-940a-503d-9eb5-54d0a478cfcb",
+        "groupId": null
+      },
+      {
+        "staffId": "50161fb9-a2f2-5f22-90e8-59071f499ae0",
+        "subjectId": "fb754ce2-940a-503d-9eb5-54d0a478cfcb",
+        "groupId": null
+      },
+      {
+        "staffId": "060acb8f-63cc-58c4-bb25-12dfda8b9875",
+        "subjectId": "687767ca-26ed-5882-b5cf-dc4a2944d8b7",
+        "groupId": null
+      },
+      {
+        "staffId": "e2e65094-b274-5dc0-8562-294a9589dad3",
+        "subjectId": "ef2460dd-f3a0-515f-8e9a-9881af4c2314",
+        "groupId": null
+      },
+      {
+        "staffId": "89862ee8-361e-5f99-8b4c-2511ac3dbcb6",
+        "subjectId": "ef2460dd-f3a0-515f-8e9a-9881af4c2314",
+        "groupId": null
+      },
+      {
+        "staffId": "749e145e-0576-5bc8-9182-a86fc903f85e",
+        "subjectId": "e3e7d072-26a2-5fba-ab14-545521e03c0e",
+        "groupId": null
+      },
+      {
+        "staffId": "bb116494-3158-56e3-b845-b7cad2ae2757",
+        "subjectId": "e3e7d072-26a2-5fba-ab14-545521e03c0e",
+        "groupId": null
+      },
+      {
+        "staffId": "bb116494-3158-56e3-b845-b7cad2ae2757",
+        "subjectId": "8e5c15a3-e561-5c1d-bbb3-a7c91fb2afd7",
+        "groupId": null
+      },
+      {
+        "staffId": "89862ee8-361e-5f99-8b4c-2511ac3dbcb6",
+        "subjectId": "8e5c15a3-e561-5c1d-bbb3-a7c91fb2afd7",
+        "groupId": null
+      },
+      {
+        "staffId": "89862ee8-361e-5f99-8b4c-2511ac3dbcb6",
+        "subjectId": "ecaccfad-c95f-5c47-b615-2acdb9028a24",
+        "groupId": null
+      },
+      {
+        "staffId": "1b50e4b3-3103-5a1b-9ecc-0e3c2a045955",
+        "subjectId": "ecaccfad-c95f-5c47-b615-2acdb9028a24",
+        "groupId": null
+      },
+      {
+        "staffId": "1b50e4b3-3103-5a1b-9ecc-0e3c2a045955",
+        "subjectId": "ca61c130-c04f-5f8f-bf6a-72a71bfb363a",
+        "groupId": null
+      },
+      {
+        "staffId": "749e145e-0576-5bc8-9182-a86fc903f85e",
+        "subjectId": "ca61c130-c04f-5f8f-bf6a-72a71bfb363a",
+        "groupId": null
+      },
+      {
+        "staffId": "749e145e-0576-5bc8-9182-a86fc903f85e",
+        "subjectId": "93045889-3e98-5bb5-a95d-2905cd3e020c",
+        "groupId": null
+      },
+      {
+        "staffId": "bb116494-3158-56e3-b845-b7cad2ae2757",
+        "subjectId": "93045889-3e98-5bb5-a95d-2905cd3e020c",
+        "groupId": null
+      }
+    ],
+    "constraint_configs": [
+      {
+        "id": "35c97565-09a9-5d41-8a36-595ee35197c0",
+        "profileName": "competition",
+        "code": "H01",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "fd2b5de0-c484-59eb-ad81-8b1f47eaaf75",
+        "profileName": "competition",
+        "code": "H02",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "184a6115-02b0-5770-b5b9-b2afd619c4ec",
+        "profileName": "competition",
+        "code": "H03",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "868ad1d2-5be0-567b-9351-e66a8da4d52e",
+        "profileName": "competition",
+        "code": "H04",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "a3cbd0c3-1fb9-5e0a-b119-a8ac362bfb85",
+        "profileName": "competition",
+        "code": "H05",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "f4cb8ad5-6496-59dd-8ec2-2eb5d9e276ac",
+        "profileName": "competition",
+        "code": "H06",
+        "mode": "hard",
+        "weight": 0,
+        "params": {
+          "lunchPeriodByLevel": {
+            "ปวช.": 4,
+            "ปวส.": 5
+          }
+        }
+      },
+      {
+        "id": "30d28f01-e972-58e3-b7ec-6ce150c10ff7",
+        "profileName": "competition",
+        "code": "H07",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "53fc237f-3ea7-54bb-b51e-451b2a169ca6",
+        "profileName": "competition",
+        "code": "H08",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "d312e916-a827-518f-9841-2059520b3a75",
+        "profileName": "competition",
+        "code": "H09",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "ad0033f7-263e-5820-af84-baff8b90dbcb",
+        "profileName": "competition",
+        "code": "H10",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "fa1b8f86-ee9b-5f2b-ad72-0f64d772401b",
+        "profileName": "competition",
+        "code": "H11",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "ade56798-4f78-5741-8f2d-901d27c1ee1b",
+        "profileName": "competition",
+        "code": "H12",
+        "mode": "hard",
+        "weight": 0,
+        "params": {
+          "minGapPeriods": 1
+        }
+      },
+      {
+        "id": "70560deb-064b-5343-9427-e7e9746f2a83",
+        "profileName": "competition",
+        "code": "H13",
+        "mode": "hard",
+        "weight": 0,
+        "params": {
+          "maxDailyPeriods": 6
+        }
+      },
+      {
+        "id": "ea840b64-806b-51a5-862e-40d8104a1699",
+        "profileName": "competition",
+        "code": "H14",
+        "mode": "hard",
+        "weight": 0,
+        "params": {
+          "maxConsecutive": 3
+        }
+      },
+      {
+        "id": "56347348-e6cc-5039-8350-886c266d2d59",
+        "profileName": "competition",
+        "code": "H15",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "76aec246-8d4e-5d56-ba79-91a505310ad2",
+        "profileName": "competition",
+        "code": "H16",
+        "mode": "hard",
+        "weight": 0,
+        "params": {
+          "eveningStartPeriod": 10
+        }
+      },
+      {
+        "id": "517d7a55-26a4-552a-b5b4-a871de32bdfa",
+        "profileName": "competition",
+        "code": "H17",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "12ebd347-cccf-503d-add9-833be5459190",
+        "profileName": "competition",
+        "code": "H18",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "50b8af7c-fa98-5b96-8f44-124d952321c0",
+        "profileName": "competition",
+        "code": "H19",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "e790f7ce-1f1b-5da3-9c4f-c74c8f84e9b5",
+        "profileName": "competition",
+        "code": "H20",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "4cf031a4-f470-5f61-920f-763d6f77d646",
+        "profileName": "competition",
+        "code": "H21",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "cedd2dc3-2286-5992-8c85-ac204ff82298",
+        "profileName": "competition",
+        "code": "S01",
+        "mode": "soft",
+        "weight": 10,
+        "params": {
+          "maxGapPerDay": 1
+        }
+      },
+      {
+        "id": "b2342b0b-a603-5005-8408-d99b354ceb48",
+        "profileName": "competition",
+        "code": "S02",
+        "mode": "soft",
+        "weight": 8,
+        "params": null
+      },
+      {
+        "id": "6e99954a-53bc-51ce-8441-139dc9df972b",
+        "profileName": "competition",
+        "code": "S03",
+        "mode": "soft",
+        "weight": 5,
+        "params": null
+      },
+      {
+        "id": "8f5e1349-1d47-5b96-a0ef-27778cee2ad5",
+        "profileName": "competition",
+        "code": "S04",
+        "mode": "soft",
+        "weight": 3,
+        "params": null
+      },
+      {
+        "id": "e30b1448-a26c-5754-ac36-a4e687716f0a",
+        "profileName": "competition",
+        "code": "S05",
+        "mode": "soft",
+        "weight": 5,
+        "params": null
+      },
+      {
+        "id": "5d26494e-fec6-5511-b39b-af3b4ffa028e",
+        "profileName": "competition",
+        "code": "S06",
+        "mode": "soft",
+        "weight": 6,
+        "params": {
+          "targetDeviation": 4
+        }
+      },
+      {
+        "id": "5cd4e5ac-9c4c-56f0-8f42-9ad2b16108a6",
+        "profileName": "competition",
+        "code": "S07",
+        "mode": "soft",
+        "weight": 20,
+        "params": null
+      },
+      {
+        "id": "b3878e94-2b83-51c7-b4a6-acb4a14ac3b1",
+        "profileName": "competition",
+        "code": "S08",
+        "mode": "soft",
+        "weight": 6,
+        "params": null
+      },
+      {
+        "id": "fb3a4ae3-91e9-5dae-9143-7eb5382bee6a",
+        "profileName": "competition",
+        "code": "S09",
+        "mode": "soft",
+        "weight": 4,
+        "params": {
+          "maxTheoryStreak": 3
+        }
+      },
+      {
+        "id": "482464b4-3751-581d-87e2-2da5a8c02e01",
+        "profileName": "competition",
+        "code": "S10",
+        "mode": "soft",
+        "weight": 3,
+        "params": null
+      },
+      {
+        "id": "6308a7ea-19e7-5378-a34a-3a6808c75a0a",
+        "profileName": "competition",
+        "code": "S11",
+        "mode": "soft",
+        "weight": 5,
+        "params": null
+      },
+      {
+        "id": "1e7b32b5-2c82-5487-8bd0-51da9ae87705",
+        "profileName": "competition",
+        "code": "S12",
+        "mode": "soft",
+        "weight": 4,
+        "params": {
+          "maxSpanPeriods": 7
+        }
+      },
+      {
+        "id": "fc44a231-3df3-5825-be94-7a6924d69c9a",
+        "profileName": "competition",
+        "code": "S13",
+        "mode": "soft",
+        "weight": 4,
+        "params": {
+          "maxDailyDifference": 2
+        }
+      },
+      {
+        "id": "87b4cf3e-23cb-5e9b-b50f-fb3ca20d7dc0",
+        "profileName": "default",
+        "code": "H01",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "2301b171-e3f8-5732-abab-61f4e479e4cd",
+        "profileName": "default",
+        "code": "H02",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "2e2829cb-af17-5122-8d6f-a5745809a65f",
+        "profileName": "default",
+        "code": "H03",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "ac8c87f3-1593-5757-b0c4-30f639ad16dd",
+        "profileName": "default",
+        "code": "H04",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "fe230c93-ad66-552b-88be-368cd983be25",
+        "profileName": "default",
+        "code": "H05",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "49713d6f-4eba-561b-8a3c-0ebfb1fe28d5",
+        "profileName": "default",
+        "code": "H06",
+        "mode": "hard",
+        "weight": 0,
+        "params": {
+          "lunchPeriodByLevel": {
+            "ปวช.": 4,
+            "ปวส.": 5
+          }
+        }
+      },
+      {
+        "id": "39ab731d-976d-50c1-bfed-3cb308d48b82",
+        "profileName": "default",
+        "code": "H07",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "83b2ea71-0ddf-5268-ba30-13a7a59de716",
+        "profileName": "default",
+        "code": "H08",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "48728cfa-1d7c-5e23-875d-1153551d428c",
+        "profileName": "default",
+        "code": "H09",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "cdb77286-de0d-5667-b8d9-b383a49d5afc",
+        "profileName": "default",
+        "code": "H10",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "6751213f-3b11-5f9e-bed3-2a3c03efb9f4",
+        "profileName": "default",
+        "code": "H11",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "64e91f61-35e8-543d-a0f2-a13ace0ab93b",
+        "profileName": "default",
+        "code": "H12",
+        "mode": "hard",
+        "weight": 0,
+        "params": {
+          "minGapPeriods": 1
+        }
+      },
+      {
+        "id": "5bb08a11-d561-5af1-83cf-4315f5c3831c",
+        "profileName": "default",
+        "code": "H13",
+        "mode": "hard",
+        "weight": 0,
+        "params": {
+          "maxDailyPeriods": 6
+        }
+      },
+      {
+        "id": "fd368654-251d-5ad9-893d-b3d95ace4515",
+        "profileName": "default",
+        "code": "H14",
+        "mode": "soft",
+        "weight": 6,
+        "params": {
+          "maxConsecutive": 4
+        }
+      },
+      {
+        "id": "bfe8b0b7-f497-5ae9-ad30-db7619c244f4",
+        "profileName": "default",
+        "code": "H15",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "8fbec565-01a0-5c8b-afb8-228e0d511dd5",
+        "profileName": "default",
+        "code": "H16",
+        "mode": "hard",
+        "weight": 0,
+        "params": {
+          "eveningStartPeriod": 10
+        }
+      },
+      {
+        "id": "4fd650b0-229c-5a04-b799-73b67e343d02",
+        "profileName": "default",
+        "code": "H17",
+        "mode": "hard",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "9b63fd49-cbe1-5ce2-a72f-604be7beb096",
+        "profileName": "default",
+        "code": "H18",
+        "mode": "off",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "103e4b07-4ee4-54a3-b5af-803f339c87a8",
+        "profileName": "default",
+        "code": "H19",
+        "mode": "off",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "ec84ea87-6d46-5f17-ba1d-86e831f35e2b",
+        "profileName": "default",
+        "code": "H20",
+        "mode": "off",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "124b6f97-710e-5308-81a4-47e3a24fe103",
+        "profileName": "default",
+        "code": "H21",
+        "mode": "off",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "e2f1c0ec-6c7d-5865-9364-76a4f37bdf05",
+        "profileName": "default",
+        "code": "S01",
+        "mode": "soft",
+        "weight": 10,
+        "params": {
+          "maxGapPerDay": 1
+        }
+      },
+      {
+        "id": "4b1953fe-358e-5e73-ba95-084a8cdb9117",
+        "profileName": "default",
+        "code": "S02",
+        "mode": "soft",
+        "weight": 8,
+        "params": null
+      },
+      {
+        "id": "5a58e37c-ea98-5a72-b7e1-67f3e84357a9",
+        "profileName": "default",
+        "code": "S03",
+        "mode": "soft",
+        "weight": 5,
+        "params": null
+      },
+      {
+        "id": "6a92bd82-0917-51c3-9286-2eb1fdc27aac",
+        "profileName": "default",
+        "code": "S04",
+        "mode": "soft",
+        "weight": 3,
+        "params": null
+      },
+      {
+        "id": "0a8efb65-05fb-54db-a3c9-99e3ae89c723",
+        "profileName": "default",
+        "code": "S05",
+        "mode": "soft",
+        "weight": 5,
+        "params": null
+      },
+      {
+        "id": "0c503891-041a-5b31-81e7-cd3af6af968d",
+        "profileName": "default",
+        "code": "S06",
+        "mode": "soft",
+        "weight": 6,
+        "params": {
+          "targetDeviation": 4
+        }
+      },
+      {
+        "id": "7aa5b0bb-bf38-568d-b3b3-c6df582c49c2",
+        "profileName": "default",
+        "code": "S07",
+        "mode": "soft",
+        "weight": 20,
+        "params": null
+      },
+      {
+        "id": "2594f1c7-d123-56b5-abd3-47f0a07ab902",
+        "profileName": "default",
+        "code": "S08",
+        "mode": "off",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "9246e745-93b9-5ccd-b336-1291ea3503fb",
+        "profileName": "default",
+        "code": "S09",
+        "mode": "off",
+        "weight": 0,
+        "params": {
+          "maxTheoryStreak": 3
+        }
+      },
+      {
+        "id": "ba19dd94-8775-5efa-b8b2-bfadb39788d5",
+        "profileName": "default",
+        "code": "S10",
+        "mode": "off",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "f71e2596-4d36-5b2b-9572-41a87151578d",
+        "profileName": "default",
+        "code": "S11",
+        "mode": "off",
+        "weight": 0,
+        "params": null
+      },
+      {
+        "id": "8b07f388-a41b-59b0-947d-0d9fc1d21366",
+        "profileName": "default",
+        "code": "S12",
+        "mode": "off",
+        "weight": 0,
+        "params": {
+          "maxSpanPeriods": 7
+        }
+      },
+      {
+        "id": "8d563ce5-5abd-57b9-91d2-091ab9d4aa26",
+        "profileName": "default",
+        "code": "S13",
+        "mode": "off",
+        "weight": 0,
+        "params": {
+          "maxDailyDifference": 2
+        }
+      }
+    ],
+    "schedule_versions": [],
+    "scheduling_runs": [],
+    "schedule_items": [],
+    "schedule_item_teachers": [],
+    "slot_occupancy": [],
+    "issue_reports": [],
+    "schedule_exceptions": [],
+    "import_jobs": [],
+    "challenge_rules": []
+  }
+}
