@@ -348,7 +348,7 @@ export const api = {
       { method: 'POST', body: JSON.stringify(body) },
       true,
     ),
-  exportUrl: (versionId: string, format: 'csv' | 'excel' | 'pdf', view = 'master', targetId?: string) => {
+  exportUrl: (versionId: string, format: 'output' | 'csv' | 'excel' | 'pdf', view = 'master', targetId?: string) => {
     const q = new URLSearchParams({ view });
     if (targetId) q.set('targetId', targetId);
     return `/api/export/${encodeURIComponent(versionId)}/${format}?${q.toString()}`;

@@ -39,22 +39,47 @@ const IssueReportPage = lazy(() => import('./pages/IssueReportPage').then((m) =>
 interface NavItem {
   id: string;
   label: string;
-  shortLabel: string;
   icon: ReactNode;
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { id: 'dashboard', label: 'ภาพรวมระบบ', shortLabel: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
-  { id: 'import', label: 'นำเข้า 7 CSV & Data Check', shortLabel: 'นำเข้า CSV', icon: <FileSpreadsheet className="h-4 w-4" /> },
-  { id: 'scenarios', label: 'โจทย์จำลอง Q01–Q25', shortLabel: 'Q01–Q25', icon: <FolderKanban className="h-4 w-4" /> },
-  { id: 'runs', label: 'ศูนย์จัดตาราง & อัลกอริทึม', shortLabel: 'รันจัดตาราง', icon: <PlayCircle className="h-4 w-4" /> },
-  { id: 'quality', label: 'สรุปผลตรวจ 4 ด้าน', shortLabel: 'สรุป 4 ด้าน', icon: <ShieldCheck className="h-4 w-4" /> },
-  { id: 'workspace', label: 'ปรับแก้ตาราง (ลากวาง)', shortLabel: 'Workspace', icon: <Wrench className="h-4 w-4" /> },
-  { id: 'views', label: 'ดูตาราง & Export PDF/Excel', shortLabel: 'ดู & Export', icon: <Calendar className="h-4 w-4" /> },
-  { id: 'challenge', label: 'Lucky Challenge Lab', shortLabel: 'Challenge', icon: <Sparkles className="h-4 w-4" /> },
-  { id: 'benchmark', label: 'Benchmark 35–40 รอบ', shortLabel: 'Benchmark', icon: <BarChart3 className="h-4 w-4" /> },
-  { id: 'issues', label: 'แจ้งปัญหา & แก้ตรงจุด', shortLabel: 'แจ้งปัญหา', icon: <MessageSquareWarning className="h-4 w-4" /> },
+const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
+  {
+    title: 'หน้าหลัก',
+    items: [{ id: 'dashboard', label: 'ภาพรวมระบบ', icon: <LayoutDashboard className="h-4 w-4" /> }],
+  },
+  {
+    title: '1. นำเข้าข้อมูล (Input)',
+    items: [
+      { id: 'import', label: 'นำเข้าข้อมูล 7 ไฟล์ CSV', icon: <FileSpreadsheet className="h-4 w-4" /> },
+      { id: 'scenarios', label: 'ชุดข้อมูลทดสอบ Q01–Q25', icon: <FolderKanban className="h-4 w-4" /> },
+    ],
+  },
+  {
+    title: '2. ประมวลผล AI (Process)',
+    items: [
+      { id: 'runs', label: 'จัดตารางอัตโนมัติ', icon: <PlayCircle className="h-4 w-4" /> },
+      { id: 'challenge', label: 'เงื่อนไขพิเศษ (Lucky Challenge)', icon: <Sparkles className="h-4 w-4" /> },
+      { id: 'benchmark', label: 'ทดสอบประสิทธิภาพ', icon: <BarChart3 className="h-4 w-4" /> },
+    ],
+  },
+  {
+    title: '3. ผลลัพธ์ (Output)',
+    items: [
+      { id: 'views', label: 'ตารางเรียน & ส่งออกรายงาน', icon: <Calendar className="h-4 w-4" /> },
+      { id: 'quality', label: 'สรุปผลตรวจสอบ 4 ด้าน', icon: <ShieldCheck className="h-4 w-4" /> },
+      { id: 'workspace', label: 'ปรับแก้ตาราง (ลากวาง)', icon: <Wrench className="h-4 w-4" /> },
+      { id: 'issues', label: 'แจ้งปัญหา & แก้ไข', icon: <MessageSquareWarning className="h-4 w-4" /> },
+    ],
+  },
 ];
+
+const ROLE_LABELS: Record<AccountRole, string> = {
+  admin: 'ผู้ดูแลระบบ',
+  scheduler: 'ผู้จัดตาราง',
+  teacher: 'ครูผู้สอน',
+  student: 'นักเรียน',
+  viewer: 'ผู้เยี่ยมชม',
+};
 
 const PROFILES: Array<{ value: string; label: string }> = [
   { value: 'competition', label: 'Competition (กติกาแข่ง)' },
@@ -181,200 +206,171 @@ export function App() {
     }
   };
 
+  const navButton = (item: NavItem) => {
+    const active = activeTab === item.id;
+    return (
+      <button
+        key={item.id}
+        type="button"
+        onMouseEnter={() => api.prefetchTab(item.id, profile)}
+        onFocus={() => api.prefetchTab(item.id, profile)}
+        onClick={() => navigate(item.id)}
+        aria-current={active ? 'page' : undefined}
+        className={`flex w-full items-center gap-2.5 rounded-md border-l-4 px-3 py-2.5 text-left text-sm font-medium transition ${
+          active
+            ? 'border-gold-500 bg-indigo-50 text-indigo-800'
+            : 'border-transparent text-slate-700 hover:bg-slate-100 hover:text-indigo-800'
+        }`}
+      >
+        {item.icon}
+        <span className="truncate">{item.label}</span>
+      </button>
+    );
+  };
+
+  const navSections = NAV_SECTIONS.map((section) => (
+    <div key={section.title} className="mb-4">
+      <div className="mb-1.5 px-3 text-[11px] font-bold uppercase tracking-wide text-slate-400">{section.title}</div>
+      <div className="space-y-0.5">{section.items.map(navButton)}</div>
+    </div>
+  ));
+
+  const dbStatus = health?.ok
+    ? `เชื่อมต่อฐานข้อมูลแล้ว (${health.tableCount} ตาราง)`
+    : healthError
+      ? `ฐานข้อมูลขัดข้อง: ${healthError}`
+      : 'กำลังเชื่อมต่อฐานข้อมูล...';
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
+      <header className="sticky top-0 z-30 bg-indigo-900 text-white shadow-md">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="rounded-md border border-white/20 p-2 hover:bg-white/10 md:hidden"
+              aria-label="เปิดเมนู"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-gold-400 bg-indigo-800">
+              <Award className="h-6 w-6 text-gold-400" />
+            </div>
+            <div className="min-w-0 leading-tight">
+              <div className="truncate text-base font-bold sm:text-lg">ระบบจัดตารางเรียนอัตโนมัติด้วยปัญญาประดิษฐ์</div>
+              <div className="truncate text-xs text-indigo-200">AI-Based Automatic Timetable Scheduling System · PTC Smart Schedule V4</div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium ${
+                health?.ok ? 'bg-emerald-500/20 text-emerald-100' : 'bg-gold-500/20 text-gold-100'
+              }`}
+              title={dbStatus}
+            >
+              <Activity className="h-3.5 w-3.5" />
+              {health?.ok ? 'ระบบพร้อมใช้งาน' : healthError ? 'ระบบขัดข้อง' : 'กำลังตรวจสอบ...'}
+            </span>
+            <label className="flex items-center gap-1.5">
+              <span className="hidden text-indigo-200 lg:inline">โปรไฟล์เงื่อนไข</span>
+              <select
+                value={profile}
+                onChange={(e) => setProfile(e.target.value)}
+                className="rounded-md border border-white/20 bg-indigo-800 px-2 py-1.5 font-medium text-white"
+              >
+                {PROFILES.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex items-center gap-1.5">
+              <span className="hidden text-indigo-200 lg:inline">สิทธิ์ผู้ใช้</span>
+              <select
+                value={role}
+                onChange={(e) => handleRoleChange(e.target.value as AccountRole)}
+                disabled={hasJwt}
+                className="rounded-md border border-white/20 bg-indigo-800 px-2 py-1.5 font-medium text-white disabled:opacity-60"
+              >
+                {ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {ROLE_LABELS[r]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {hasJwt && session?.user && !session.user.isPublicGuest ? (
+              <button
+                type="button"
+                onClick={() => void handleLogout()}
+                className="inline-flex items-center gap-1 rounded-md bg-white/10 px-2.5 py-1.5 font-medium hover:bg-white/20"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span>ออกจากระบบ ({session.user.username})</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setLoginOpen(true)}
+                className="inline-flex items-center gap-1 rounded-md bg-gold-500 px-3 py-1.5 font-semibold text-indigo-950 hover:bg-gold-400"
+              >
+                <LogIn className="h-3.5 w-3.5" />
+                <span>เข้าสู่ระบบ</span>
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="h-1 bg-gold-500" />
+      </header>
+
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
           <div className="fixed inset-0 bg-slate-900/50" onClick={() => setMobileMenuOpen(false)} />
           <aside className="relative z-10 flex w-72 flex-col bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3.5">
-              <div className="flex items-center gap-2 font-bold text-indigo-700">
-                <Award className="h-5 w-5" />
-                <span>PTC Smart Schedule V4</span>
-              </div>
+            <div className="flex items-center justify-between border-b-4 border-gold-500 bg-indigo-900 px-4 py-3 text-white">
+              <span className="font-bold">เมนูระบบ</span>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-lg p-1 text-slate-500 hover:bg-slate-100"
+                className="rounded-md p-1 hover:bg-white/10"
                 aria-label="ปิดเมนู"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-              {NAV_ITEMS.map((item) => {
-                const active = activeTab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onMouseEnter={() => api.prefetchTab(item.id, profile)}
-                    onFocus={() => api.prefetchTab(item.id, profile)}
-                    onClick={() => navigate(item.id)}
-                    className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition ${
-                      active ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
+            <nav className="flex-1 overflow-y-auto p-3">{navSections}</nav>
           </aside>
         </div>
       )}
 
-      <div className="flex min-h-screen">
+      <div className="flex flex-1">
         <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
-          <div className="border-b border-slate-200 px-4 py-4">
-            <div className="flex items-center gap-2 text-base font-bold text-indigo-700">
-              <Award className="h-5 w-5 shrink-0" />
-              <span>PTC Smart Schedule</span>
-            </div>
-            <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-              <span className="rounded bg-indigo-50 px-1.5 py-0.5 font-semibold text-indigo-700">V4</span>
-              <span>ระดับอาชีวศึกษา · TiDB + CSP</span>
-            </div>
-          </div>
-
-          <nav className="flex-1 space-y-1 p-3">
-            {NAV_ITEMS.map((item) => {
-              const active = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onMouseEnter={() => api.prefetchTab(item.id, profile)}
-                  onFocus={() => api.prefetchTab(item.id, profile)}
-                  onClick={() => navigate(item.id)}
-                  className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium transition ${
-                    active ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-700 hover:bg-slate-100'
-                  }`}
-                >
-                  {item.icon}
-                  <span className="truncate">{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-
+          <nav className="flex-1 overflow-y-auto p-3 pt-5">{navSections}</nav>
           <div className="border-t border-slate-200 p-3 text-xs text-slate-500">
             <div className="flex items-center gap-1.5 font-medium text-slate-700">
-              <Database className="h-3.5 w-3.5 text-emerald-600" />
-              <span>{health?.ok ? `${health.database} (${health.tableCount} ตาราง)` : healthError || 'กำลังเชื่อมต่อ DB...'}</span>
+              <Database className={`h-3.5 w-3.5 ${health?.ok ? 'text-emerald-600' : 'text-gold-600'}`} />
+              <span>{dbStatus}</span>
             </div>
-            <div className="mt-1 text-[11px] text-slate-400">
-              {health?.publicDemoMode ? 'Public Demo Mode (เปิดอิสระ)' : 'Protected Mode'}
-            </div>
+            {health && (
+              <div className="mt-1 text-[11px] text-slate-400">
+                {health.publicDemoMode ? 'โหมดสาธารณะ: ทดลองใช้ได้ทุกเมนูโดยไม่ต้องเข้าสู่ระบบ' : 'โหมดจำกัดสิทธิ์'}
+              </div>
+            )}
           </div>
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur-xs">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setMobileMenuOpen(true)}
-                  className="rounded-lg border border-slate-200 p-2 text-slate-700 hover:bg-slate-50 md:hidden"
-                  aria-label="เปิดเมนู"
-                >
-                  <Menu className="h-5 w-5" />
-                </button>
-                <div className="md:hidden">
-                  <div className="text-sm font-bold text-indigo-700">PTC Smart Schedule V4</div>
-                </div>
-                <span
-                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-                    health?.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
-                  }`}
-                >
-                  <Activity className="h-3.5 w-3.5" />
-                  {health?.ok ? `TiDB Live (${health.tableCount} tables)` : 'Checking TiDB...'}
-                </span>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="flex items-center gap-1.5 text-xs text-slate-600">
-                  <span className="hidden font-medium sm:inline">โปรไฟล์:</span>
-                  <select
-                    value={profile}
-                    onChange={(e) => setProfile(e.target.value)}
-                    className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-800"
-                  >
-                    {PROFILES.map((p) => (
-                      <option key={p.value} value={p.value}>
-                        {p.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="flex items-center gap-1.5 text-xs text-slate-600">
-                  <span className="hidden font-medium sm:inline">สิทธิ์จำลอง:</span>
-                  <select
-                    value={role}
-                    onChange={(e) => handleRoleChange(e.target.value as AccountRole)}
-                    disabled={hasJwt}
-                    className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-800 disabled:opacity-60"
-                  >
-                    {ROLES.map((r) => (
-                      <option key={r} value={r}>
-                        {r}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                {hasJwt && session?.user && !session.user.isPublicGuest ? (
-                  <button
-                    type="button"
-                    onClick={() => void handleLogout()}
-                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
-                  >
-                    <LogOut className="h-3.5 w-3.5" />
-                    <span>{session.user.username}</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setLoginOpen(true)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                  >
-                    <LogIn className="h-3.5 w-3.5" />
-                    <span>Login บัญชี</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-2.5 flex gap-1.5 overflow-x-auto pb-1 md:hidden">
-              {NAV_ITEMS.map((item) => {
-                const active = activeTab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onMouseEnter={() => api.prefetchTab(item.id, profile)}
-                    onFocus={() => api.prefetchTab(item.id, profile)}
-                    onClick={() => navigate(item.id)}
-                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
-                      active ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'
-                    }`}
-                  >
-                    {item.shortLabel}
-                  </button>
-                );
-              })}
-            </div>
-          </header>
-
           <main className="mx-auto w-full max-w-7xl flex-1 p-4 sm:p-6">
             <ErrorBoundary resetKey={`${activeTab}-${profile}-${role}`}>
               <Suspense fallback={<PageSkeleton />}>{renderPage()}</Suspense>
             </ErrorBoundary>
           </main>
+          <footer className="border-t border-slate-200 bg-white px-6 py-3 text-center text-xs text-slate-500">
+            ระบบจัดตารางเรียนอัตโนมัติด้วยเทคโนโลยีปัญญาประดิษฐ์ · ฉบับฝึกซ้อมการแข่งขันทักษะวิชาชีพ สาขาเทคโนโลยีปัญญาประดิษฐ์
+          </footer>
         </div>
       </div>
 

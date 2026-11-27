@@ -112,8 +112,15 @@ export function TimetableViewsPage({ profile }: { profile: string }) {
         </div>
         {vId && (
           <div className="flex flex-wrap gap-2">
+            <a
+              href={api.exportUrl(vId, 'output')}
+              title="ไฟล์ผลลัพธ์ตามรูปแบบกรรมการ: group_id,timeslot_id,day,period,subject_id,teacher_id,room_id"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-700 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-800"
+            >
+              <Download className="h-3.5 w-3.5" /> output.csv (ส่งกรรมการ)
+            </a>
             <a href={api.exportUrl(vId, 'csv', view, targetId)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-              <Download className="h-3.5 w-3.5" /> CSV
+              <Download className="h-3.5 w-3.5" /> CSV (ภาษาไทย)
             </a>
             <a href={api.exportUrl(vId, 'excel', view, targetId)} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100">
               <Download className="h-3.5 w-3.5" /> Excel (.xlsx)

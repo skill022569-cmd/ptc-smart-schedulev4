@@ -1,7 +1,32 @@
 @import "tailwindcss";
 
+/* Thai government look: navy primary (replaces the indigo scale used across all pages) + gold accent. */
+@theme {
+  --color-indigo-50: #eef3fb;
+  --color-indigo-100: #d9e4f5;
+  --color-indigo-200: #b6caeb;
+  --color-indigo-300: #8aa8dc;
+  --color-indigo-400: #5b80c7;
+  --color-indigo-500: #3a60ad;
+  --color-indigo-600: #1f4590;
+  --color-indigo-700: #183873;
+  --color-indigo-800: #132d5c;
+  --color-indigo-900: #0f2448;
+  --color-indigo-950: #0a1830;
+  --color-gold-100: #f8efd0;
+  --color-gold-300: #e6cb73;
+  --color-gold-400: #d9b84a;
+  --color-gold-500: #c9a227;
+  --color-gold-600: #a88418;
+}
+
 @layer base {
   body {
     font-family: 'Sarabun', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-gold-500);
+    outline-offset: 2px;
   }
 }
