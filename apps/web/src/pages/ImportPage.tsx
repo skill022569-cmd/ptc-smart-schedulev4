@@ -68,7 +68,7 @@ export function ImportPage({ onCommitted }: { onCommitted: () => void }) {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">นำเข้าข้อมูล 7 CSV &amp; Data Check</h1>
+          <h1 className="text-2xl font-bold text-slate-900">นำเข้าข้อมูล 7 ไฟล์ CSV และตรวจสอบ</h1>
           <p className="text-sm text-slate-500">ตรวจความสมบูรณ์และความสัมพันธ์ข้ามไฟล์ก่อนจัดตาราง (ข้อกำหนด 1.1 &amp; โจทย์ 19)</p>
         </div>
         <div className="flex flex-wrap gap-2">

@@ -105,7 +105,7 @@ export function TimetableViewsPage({ profile }: { profile: string }) {
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">มุมมองตารางสอน &amp; ส่งออกเอกสาร</h1>
+          <h1 className="text-2xl font-bold text-slate-900">ตารางเรียนและส่งออกรายงาน</h1>
           <p className="text-sm text-slate-500">
             คาบว่างรวม: กลุ่มเรียน {studentGapTotal} คาบ · ครู {teacherGapTotal} คาบ (หัวข้อ 1.3)
           </p>

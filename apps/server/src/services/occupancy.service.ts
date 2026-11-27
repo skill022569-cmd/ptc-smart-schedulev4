@@ -198,6 +198,15 @@ export async function saveScheduleVersionAtomic(params: {
   };
 }
 
+export interface ScheduleItemPatch {
+  dayOfWeek?: number | null;
+  startPeriod?: number | null;
+  roomId?: string | null;
+  isLocked?: boolean;
+  status?: 'scheduled' | 'unplaced_tray';
+  teacherIds?: string[];
+}
+
 /**
  * Atomically update one schedule item (move day/period/room/teachers or toggle lock),
  * rebuilding `slot_occupancy` for the item inside a transaction so TiDB `uq_no_clash` rejects clashes.
@@ -206,84 +215,95 @@ export async function updateScheduleItemAtomic(params: {
   versionId: string;
   itemId: string;
   ctx: ScheduleEvaluationContext;
-  patch: {
-    dayOfWeek?: number | null;
-    startPeriod?: number | null;
-    roomId?: string | null;
-    isLocked?: boolean;
-    status?: 'scheduled' | 'unplaced_tray';
-    teacherIds?: string[];
-  };
+  patch: ScheduleItemPatch;
   updatedBy?: string | null;
 }): Promise<ScheduleItem> {
-  const existing = params.ctx.items.find((i) => i.id === params.itemId && i.versionId === params.versionId);
-  if (!existing) throw new Error(`Schedule item ${params.itemId} not found in version ${params.versionId}`);
+  const [updated] = await updateScheduleItemsAtomic({ ...params, changes: [{ itemId: params.itemId, patch: params.patch }] });
+  return updated!;
+}
 
-  const updated: ScheduleItem = {
-    ...existing,
-    dayOfWeek: params.patch.dayOfWeek !== undefined ? params.patch.dayOfWeek : existing.dayOfWeek,
-    startPeriod: params.patch.startPeriod !== undefined ? params.patch.startPeriod : existing.startPeriod,
-    roomId: params.patch.roomId !== undefined ? params.patch.roomId : existing.roomId,
-    isLocked: params.patch.isLocked !== undefined ? params.patch.isLocked : existing.isLocked,
-    status: params.patch.status !== undefined ? params.patch.status : existing.status,
-    rowVersion: (existing.rowVersion ?? 1) + 1,
-    updatedBy: safeUuid(params.updatedBy) ?? 'scheduler',
-    updatedAt: formatMysqlTimestamp(),
-  };
-
-  const nextTeachers: ScheduleItemTeacher[] =
-    params.patch.teacherIds !== undefined
-      ? params.patch.teacherIds.map((staffId) => ({ itemId: updated.id, staffId }))
-      : params.ctx.itemTeachers.filter((it) => it.itemId === updated.id);
-
-  const singleOcc = buildSlotOccupancyRows(params.versionId, params.ctx, [updated], nextTeachers);
+/**
+ * Same as `updateScheduleItemAtomic` for several items in ONE transaction: all their occupancy rows are
+ * removed before any is re-inserted, so a swap (A↔B) or an undo of one does not trip `uq_no_clash` halfway.
+ */
+export async function updateScheduleItemsAtomic(params: {
+  versionId: string;
+  ctx: ScheduleEvaluationContext;
+  changes: Array<{ itemId: string; patch: ScheduleItemPatch }>;
+  updatedBy?: string | null;
+}): Promise<ScheduleItem[]> {
+  const rows = params.changes.map(({ itemId, patch }) => {
+    const existing = params.ctx.items.find((i) => i.id === itemId && i.versionId === params.versionId);
+    if (!existing) throw new Error(`Schedule item ${itemId} not found in version ${params.versionId}`);
+    const updated: ScheduleItem = {
+      ...existing,
+      dayOfWeek: patch.dayOfWeek !== undefined ? patch.dayOfWeek : existing.dayOfWeek,
+      startPeriod: patch.startPeriod !== undefined ? patch.startPeriod : existing.startPeriod,
+      roomId: patch.roomId !== undefined ? patch.roomId : existing.roomId,
+      isLocked: patch.isLocked !== undefined ? patch.isLocked : existing.isLocked,
+      status: patch.status !== undefined ? patch.status : existing.status,
+      rowVersion: (existing.rowVersion ?? 1) + 1,
+      updatedBy: safeUuid(params.updatedBy) ?? 'scheduler',
+      updatedAt: formatMysqlTimestamp(),
+    };
+    const teachers: ScheduleItemTeacher[] =
+      patch.teacherIds !== undefined
+        ? patch.teacherIds.map((staffId) => ({ itemId: updated.id, staffId }))
+        : params.ctx.itemTeachers.filter((it) => it.itemId === updated.id);
+    return { existing, updated, patch, teachers };
+  });
+  const occRows = buildSlotOccupancyRows(
+    params.versionId,
+    params.ctx,
+    rows.map((r) => r.updated),
+    rows.flatMap((r) => r.teachers),
+  );
 
   await db.transaction(async (tx) => {
-    await tx.delete(slotOccupancy).where(eq(slotOccupancy.itemId, updated.id));
-    if (params.patch.teacherIds !== undefined) {
-      await tx.delete(scheduleItemTeachers).where(eq(scheduleItemTeachers.itemId, updated.id));
-      if (nextTeachers.length > 0) {
-        await tx.insert(scheduleItemTeachers).values(nextTeachers as never);
+    for (const { updated } of rows) await tx.delete(slotOccupancy).where(eq(slotOccupancy.itemId, updated.id));
+    for (const { existing, updated, patch, teachers } of rows) {
+      if (patch.teacherIds !== undefined) {
+        await tx.delete(scheduleItemTeachers).where(eq(scheduleItemTeachers.itemId, updated.id));
+        if (teachers.length > 0) await tx.insert(scheduleItemTeachers).values(teachers as never);
       }
+      await tx
+        .update(scheduleItems)
+        .set({
+          dayOfWeek: updated.dayOfWeek,
+          startPeriod: updated.startPeriod,
+          roomId: updated.roomId,
+          isLocked: updated.isLocked,
+          status: updated.status,
+          rowVersion: updated.rowVersion,
+          updatedBy: updated.updatedBy,
+          updatedAt: updated.updatedAt,
+        })
+        .where(eq(scheduleItems.id, updated.id));
+      await tx.insert(auditLogs).values({
+        id: randomUUID(),
+        accountId: safeUuid(params.updatedBy),
+        action: 'move_item',
+        entity: 'schedule_items',
+        entityId: updated.id,
+        beforeData: {
+          dayOfWeek: existing.dayOfWeek,
+          startPeriod: existing.startPeriod,
+          roomId: existing.roomId,
+          isLocked: existing.isLocked,
+          status: existing.status,
+        },
+        afterData: {
+          dayOfWeek: updated.dayOfWeek,
+          startPeriod: updated.startPeriod,
+          roomId: updated.roomId,
+          isLocked: updated.isLocked,
+          status: updated.status,
+        },
+      });
     }
-    await tx
-      .update(scheduleItems)
-      .set({
-        dayOfWeek: updated.dayOfWeek,
-        startPeriod: updated.startPeriod,
-        roomId: updated.roomId,
-        isLocked: updated.isLocked,
-        status: updated.status,
-        rowVersion: updated.rowVersion,
-        updatedBy: updated.updatedBy,
-        updatedAt: updated.updatedAt,
-      })
-      .where(eq(scheduleItems.id, updated.id));
-
-    if (singleOcc.length > 0) {
-      await tx.insert(slotOccupancy).values(singleOcc as never);
-    }
-    await tx.insert(auditLogs).values({
-      id: randomUUID(),
-      accountId: safeUuid(params.updatedBy),
-      action: 'move_item',
-      entity: 'schedule_items',
-      entityId: updated.id,
-      beforeData: {
-        dayOfWeek: existing.dayOfWeek,
-        startPeriod: existing.startPeriod,
-        roomId: existing.roomId,
-        isLocked: existing.isLocked,
-      },
-      afterData: {
-        dayOfWeek: updated.dayOfWeek,
-        startPeriod: updated.startPeriod,
-        roomId: updated.roomId,
-        isLocked: updated.isLocked,
-      },
-    });
+    if (occRows.length > 0) await tx.insert(slotOccupancy).values(occRows as never);
   });
   invalidateWorkspaceCache();
 
-  return updated;
+  return rows.map((r) => r.updated);
 }

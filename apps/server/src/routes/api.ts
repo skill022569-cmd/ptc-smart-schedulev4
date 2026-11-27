@@ -48,7 +48,7 @@ import { exportTimetableExcel } from '../services/export/excel';
 import { exportTimetablePdf } from '../services/export/pdf';
 import type { ExportViewMode } from '../services/export/shared';
 import { DEFAULT_COLUMN_MAPPING, parseDataset7, validateDataset7 } from '../services/import';
-import { saveScheduleVersionAtomic, updateScheduleItemAtomic } from '../services/occupancy.service';
+import { saveScheduleVersionAtomic, updateScheduleItemsAtomic } from '../services/occupancy.service';
 import {
   commitDataset7ToDb,
   evaluateWorkspaceCached,
@@ -536,35 +536,50 @@ export function createApiRouter(): Router {
     });
   });
 
-  router.patch('/schedule/:versionId/items/:itemId', async (req: Request, res: Response) => {
-    const versionId = strParam(req.params.versionId);
-    const itemId = strParam(req.params.itemId);
-    const parsed = MoveItemSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: 'ข้อมูลการย้ายคาบไม่ถูกต้อง', issues: parsed.error.issues });
-      return;
-    }
+  /** Apply item patches in one transaction; DB `uq_no_clash` turns any clash into HTTP 409. */
+  const applyItemChanges = async (
+    req: Request,
+    res: Response,
+    versionId: string,
+    changes: Array<{ itemId: string; patch: z.infer<typeof MoveItemSchema> }>,
+  ) => {
     const ws = await loadContextFromDb({ versionId });
     try {
-      const updated = await updateScheduleItemAtomic({
-        versionId,
-        itemId,
-        ctx: ws.ctx,
-        patch: parsed.data,
-        updatedBy: req.user?.accountId ?? null,
-      });
+      const items = await updateScheduleItemsAtomic({ versionId, ctx: ws.ctx, changes, updatedBy: req.user?.accountId ?? null });
       invalidateWorkspaceCache();
       const nextWs = await loadContextFromDb({ versionId });
       const { report, qualitySummary } = evaluateWorkspaceCached(nextWs.ctx, { includePassedExplanations: false });
-      res.json({ item: updated, report, qualitySummary });
+      res.json({ item: items[0], items, report, qualitySummary });
     } catch (err) {
       const causeMsg = (err as { cause?: { message?: string } } | null)?.cause?.message ?? '';
       const msg = causeMsg || (err instanceof Error ? err.message : String(err));
       const isClash = msg.includes('uq_no_clash') || msg.includes('Duplicate entry');
       res.status(isClash ? 409 : 400).json({
-        error: isClash ? 'ฐานข้อมูลปฏิเสธการย้ายเนื่องจากพบคาบชน (uq_no_clash)' : msg.slice(0, 300),
+        error: isClash ? 'ย้ายไม่ได้: ตารางจะชนกัน (ครู ห้อง หรือกลุ่มเรียนซ้อนคาบ)' : msg.slice(0, 300),
       });
     }
+  };
+
+  router.patch('/schedule/:versionId/items/:itemId', async (req: Request, res: Response) => {
+    const parsed = MoveItemSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'ข้อมูลการย้ายคาบไม่ถูกต้อง', issues: parsed.error.issues });
+      return;
+    }
+    await applyItemChanges(req, res, strParam(req.params.versionId), [{ itemId: strParam(req.params.itemId), patch: parsed.data }]);
+  });
+
+  // Move/swap/undo several items atomically: { changes: [{ itemId, dayOfWeek, startPeriod, status, ... }] }
+  router.post('/schedule/:versionId/items-batch', async (req: Request, res: Response) => {
+    const parsed = z
+      .object({ changes: z.array(MoveItemSchema.extend({ itemId: z.string().min(1) })).min(1).max(20) })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'ข้อมูลการย้ายคาบไม่ถูกต้อง', issues: parsed.error.issues });
+      return;
+    }
+    const changes = parsed.data.changes.map(({ itemId, ...patch }) => ({ itemId, patch }));
+    await applyItemChanges(req, res, strParam(req.params.versionId), changes);
   });
 
   router.post('/schedule/:versionId/items/:itemId/fix-options', async (req: Request, res: Response) => {

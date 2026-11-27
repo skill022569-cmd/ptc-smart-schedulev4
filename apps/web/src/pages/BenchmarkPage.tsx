@@ -94,7 +94,7 @@ export function BenchmarkPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Benchmark &amp; Multi-Objective Comparison</h1>
+          <h1 className="text-2xl font-bold text-slate-900">ทดสอบประสิทธิภาพอัลกอริทึม</h1>
           <p className="text-sm text-slate-500">เปรียบเทียบ Greedy vs CSP+GA vs CSP+SA หลาย Seed และโปรไฟล์เน้นครู vs เน้นห้อง (โจทย์ 23, 25)</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

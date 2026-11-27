@@ -16,6 +16,7 @@ import {
   PlayCircle,
   ShieldCheck,
   Sparkles,
+  Users,
   Wrench,
   X,
 } from 'lucide-react';
@@ -36,11 +37,20 @@ const ChallengeLabPage = lazy(() => import('./pages/ChallengeLabPage').then((m) 
 const BenchmarkPage = lazy(() => import('./pages/BenchmarkPage').then((m) => ({ default: m.BenchmarkPage })));
 const IssueReportPage = lazy(() => import('./pages/IssueReportPage').then((m) => ({ default: m.IssueReportPage })));
 
+const StaffPage = lazy(() => import('./pages/StaffPage').then((m) => ({ default: m.StaffPage })));
+
 interface NavItem {
   id: string;
   label: string;
   icon: ReactNode;
 }
+
+/** Menus each role sees; admin and scheduler see everything. */
+const ROLE_MENUS: Partial<Record<AccountRole, string[]>> = {
+  teacher: ['dashboard', 'workspace', 'views', 'staff', 'issues'],
+  student: ['dashboard', 'workspace', 'views'],
+  viewer: ['dashboard', 'views', 'staff'],
+};
 
 const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
   {
@@ -65,11 +75,15 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
   {
     title: '3. ผลลัพธ์ (Output)',
     items: [
+      { id: 'workspace', label: 'จัดการตาราง (ย้าย/สลับคาบ)', icon: <Wrench className="h-4 w-4" /> },
       { id: 'views', label: 'ตารางเรียน & ส่งออกรายงาน', icon: <Calendar className="h-4 w-4" /> },
       { id: 'quality', label: 'สรุปผลตรวจสอบ 4 ด้าน', icon: <ShieldCheck className="h-4 w-4" /> },
-      { id: 'workspace', label: 'ปรับแก้ตาราง (ลากวาง)', icon: <Wrench className="h-4 w-4" /> },
       { id: 'issues', label: 'แจ้งปัญหา & แก้ไข', icon: <MessageSquareWarning className="h-4 w-4" /> },
     ],
+  },
+  {
+    title: 'ข้อมูลวิทยาลัย',
+    items: [{ id: 'staff', label: 'รายชื่อบุคลากร', icon: <Users className="h-4 w-4" /> }],
   },
 ];
 
@@ -178,10 +192,14 @@ export function App() {
   };
 
   const hasJwt = Boolean(getStoredToken());
+  const effectiveRole: AccountRole = hasJwt && session?.user && !session.user.isPublicGuest ? session.user.role : role;
+  const allowedMenus = ROLE_MENUS[effectiveRole];
+  const canSee = (id: string) => !allowedMenus || allowedMenus.includes(id);
+  const page = canSee(activeTab) ? activeTab : 'dashboard';
 
   const renderPage = () => {
-    const scopeKey = `${activeTab}-${role}`;
-    switch (activeTab) {
+    const scopeKey = `${page}-${effectiveRole}`;
+    switch (page) {
       case 'import':
         return <ImportPage key={scopeKey} onCommitted={onMutated} />;
       case 'scenarios':
@@ -191,7 +209,7 @@ export function App() {
       case 'quality':
         return <QualitySummaryPage key={scopeKey} profile={profile} />;
       case 'workspace':
-        return <WorkspacePage key={scopeKey} profile={profile} />;
+        return <WorkspacePage key={scopeKey} profile={profile} role={effectiveRole} />;
       case 'views':
         return <TimetableViewsPage key={scopeKey} profile={profile} />;
       case 'challenge':
@@ -200,6 +218,8 @@ export function App() {
         return <BenchmarkPage key={scopeKey} />;
       case 'issues':
         return <IssueReportPage key={scopeKey} profile={profile} />;
+      case 'staff':
+        return <StaffPage key={scopeKey} profile={profile} />;
       case 'dashboard':
       default:
         return <DashboardPage key={scopeKey} profile={profile} onNavigate={navigate} />;
@@ -207,7 +227,7 @@ export function App() {
   };
 
   const navButton = (item: NavItem) => {
-    const active = activeTab === item.id;
+    const active = page === item.id;
     return (
       <button
         key={item.id}
@@ -228,12 +248,14 @@ export function App() {
     );
   };
 
-  const navSections = NAV_SECTIONS.map((section) => (
-    <div key={section.title} className="mb-4">
-      <div className="mb-1.5 px-3 text-[11px] font-bold uppercase tracking-wide text-slate-400">{section.title}</div>
-      <div className="space-y-0.5">{section.items.map(navButton)}</div>
-    </div>
-  ));
+  const navSections = NAV_SECTIONS.map((section) => ({ ...section, items: section.items.filter((i) => canSee(i.id)) }))
+    .filter((section) => section.items.length > 0)
+    .map((section) => (
+      <div key={section.title} className="mb-4">
+        <div className="mb-1.5 px-3 text-[11px] font-bold uppercase tracking-wide text-slate-400">{section.title}</div>
+        <div className="space-y-0.5">{section.items.map(navButton)}</div>
+      </div>
+    ));
 
   const dbStatus = health?.ok
     ? `เชื่อมต่อฐานข้อมูลแล้ว (${health.tableCount} ตาราง)`

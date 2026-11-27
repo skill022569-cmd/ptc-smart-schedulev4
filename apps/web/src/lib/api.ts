@@ -34,6 +34,14 @@ const responseCache = new Map<string, CacheEntry>();
 const inFlightGets = new Map<string, Promise<unknown>>();
 let cacheEpoch = 0;
 
+/** One item's new position for the batch move endpoint (null day/period + unplaced_tray = put in the tray). */
+export interface ItemChange {
+  itemId: string;
+  dayOfWeek: number | null;
+  startPeriod: number | null;
+  status: 'scheduled' | 'unplaced_tray';
+}
+
 export function getStoredToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -300,6 +308,11 @@ export const api = {
     mutateRequest<{ item: unknown; report: ScheduleWorkspacePayload['report']; qualitySummary: ScheduleWorkspacePayload['qualitySummary'] }>(
       `/api/schedule/${encodeURIComponent(versionId)}/items/${encodeURIComponent(itemId)}`,
       { method: 'PATCH', body: JSON.stringify(patch) },
+    ),
+  moveItems: (versionId: string, changes: ItemChange[]) =>
+    mutateRequest<{ items: unknown[]; report: ScheduleWorkspacePayload['report'] }>(
+      `/api/schedule/${encodeURIComponent(versionId)}/items-batch`,
+      { method: 'POST', body: JSON.stringify({ changes }) },
     ),
   fixOptions: (versionId: string, itemId: string, profileName = 'competition') =>
     mutateRequest<{ options: FixOption[] }>(

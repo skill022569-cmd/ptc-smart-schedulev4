@@ -72,7 +72,7 @@ export function IssueReportPage({ profile }: { profile: string }) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">แจ้งเหตุฉุกเฉิน &amp; Auto-Reschedule รายวันที่ (โจทย์ 20)</h1>
+        <h1 className="text-2xl font-bold text-slate-900">แจ้งปัญหาและปรับตารางรายวัน</h1>
         <p className="text-sm text-slate-500">จัดการครูลา/ห้องเสียเฉพาะวันที่ผ่านตาราง `schedule_exceptions` โดยไม่แตะต้องตารางหลัก</p>
       </div>
 

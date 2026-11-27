@@ -49,7 +49,7 @@ export function QualitySummaryPage({ profile }: { profile: string }) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">สรุปผลตรวจคุณภาพตาราง 4 ด้าน (Quality Summary)</h1>
+          <h1 className="text-2xl font-bold text-slate-900">สรุปผลตรวจสอบตาราง 4 ด้าน</h1>
           <p className="text-sm text-slate-500">เวอร์ชัน: {data.version?.name ?? 'ยังไม่มี'} · โปรไฟล์: {q.profileName}</p>
         </div>
         <span className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-bold ${q.passed ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>

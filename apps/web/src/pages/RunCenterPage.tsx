@@ -62,7 +62,7 @@ export function RunCenterPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">ศูนย์สั่งรันจัดตาราง (Run Center &amp; Agentic Pipeline)</h1>
+        <h1 className="text-2xl font-bold text-slate-900">จัดตารางอัตโนมัติด้วย AI</h1>
         <p className="text-sm text-slate-500">รัน 4 Agent (Planner → Solver → Validator → Repair) พร้อม Seed คงที่ (ข้อกำหนด 1.4)</p>
       </div>
 

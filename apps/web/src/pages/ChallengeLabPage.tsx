@@ -96,7 +96,7 @@ export function ChallengeLabPage({ profile, onApplied }: { profile: string; onAp
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Lucky Challenge Lab (Rule Builder &amp; Before/After)</h1>
+        <h1 className="text-2xl font-bold text-slate-900">เงื่อนไขพิเศษ (Lucky Challenge)</h1>
         <p className="text-sm text-slate-500">เพิ่มเงื่อนไขฉลาก 4 หมวดโดยไม่ต้องแก้โค้ด ตรวจผลกระทบทันที แล้วสั่ง Repair หรือจัดใหม่ (หัวข้อ 3)</p>
       </div>
 
