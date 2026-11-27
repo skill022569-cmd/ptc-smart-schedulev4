@@ -310,7 +310,7 @@ export const api = {
       { method: 'PATCH', body: JSON.stringify(patch) },
     ),
   moveItems: (versionId: string, changes: ItemChange[]) =>
-    mutateRequest<{ items: unknown[]; report: ScheduleWorkspacePayload['report'] }>(
+    mutateRequest<{ items: unknown[] }>(
       `/api/schedule/${encodeURIComponent(versionId)}/items-batch`,
       { method: 'POST', body: JSON.stringify({ changes }) },
     ),

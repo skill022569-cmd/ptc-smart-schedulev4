@@ -46,9 +46,26 @@ describe('planCellActions (single-cell move & swap)', () => {
     expect(tried).toBeGreaterThan(0);
   });
 
+  it('gives the same answer every time (swap checks restore the index)', () => {
+    const id = placed[3]!.id;
+    expect(planCellActions(ctx, id)).toEqual(planCellActions(ctx, id));
+  });
+
   it('a locked item offers no move or swap', () => {
     const item = { ...placed[0]!, isLocked: true };
     const plan = planCellActions({ ...ctx, items: ctx.items.map((i) => (i.id === item.id ? item : i)) }, item.id);
     expect(plan.moves.every((m) => !m.ok) && plan.swaps.every((s) => !s.ok)).toBe(true);
+  });
+
+  it('is fast enough to run on every click with the large Q21 dataset', () => {
+    const q21 = JSON.parse(readFileSync(path.resolve('scenarios', 'Q21.json'), 'utf8')) as ScenarioDataset;
+    const c21 = createEvaluationContext({ ...q21.tables, constraint_configs: [] }, { profileName: 'competition' });
+    const s21 = runAgenticPipeline({ ctx: c21, algorithm: 'greedy', seed: 1, maxIterations: 1, timeLimitSec: 20, versionId: 'ver:q21' });
+    const big = { ...c21, items: s21.items, itemTeachers: s21.itemTeachers };
+    const sample = big.items.filter((i) => i.status === 'scheduled').slice(0, 20);
+    const t = performance.now();
+    for (const i of sample) planCellActions(big, i.id);
+    const perClick = (performance.now() - t) / sample.length;
+    expect(perClick, `${perClick.toFixed(1)} ms per click`).toBeLessThan(100);
   });
 });

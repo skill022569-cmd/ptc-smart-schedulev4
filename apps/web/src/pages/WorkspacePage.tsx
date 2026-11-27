@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   useDraggable,
   useDroppable,
@@ -64,12 +65,11 @@ function Card({
   continued?: boolean;
   onClick: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: dragId,
     data: { itemId: item.id },
     disabled: !editable || Boolean(item.isLocked),
   });
-  const style = transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined;
   const ring =
     state === 'selected'
       ? 'ring-2 ring-indigo-600 border-indigo-600'
@@ -81,7 +81,6 @@ function Card({
   return (
     <div
       ref={setNodeRef}
-      style={style}
       {...listeners}
       {...attributes}
       role="button"
@@ -99,7 +98,7 @@ function Card({
       }}
       className={`rounded-md border p-1.5 text-left text-[11px] leading-snug shadow-xs transition ${color} ${ring} ${
         editable && !item.isLocked ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
-      } ${isDragging ? 'z-50 opacity-80 shadow-lg' : ''} ${continued ? 'border-dashed' : ''}`}
+      } ${isDragging ? 'opacity-40' : ''} ${continued ? 'border-dashed' : ''}`}
     >
       <div className="flex items-start justify-between gap-1 font-semibold text-slate-800">
         <span className="line-clamp-2">{title}</span>
@@ -171,7 +170,9 @@ export function WorkspacePage({ profile, role }: { profile: string; role: Accoun
   const [data, setData] = useState<ScheduleWorkspacePayload | null>(() => api.getCachedScheduleLatest(profile));
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(0);
+  const [dragging, setDragging] = useState<string | null>(null);
+  const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
   const [view, setView] = useState<View>(role === 'teacher' ? 'teacher' : 'group');
   const [targetId, setTargetId] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -257,26 +258,50 @@ export function WorkspacePage({ profile, role }: { profile: string; role: Accoun
   const moveAt = new Map((plan?.moves ?? []).map((m) => [`${m.day}:${m.period}`, m]));
   const swapWith = new Map((plan?.swaps ?? []).map((s) => [s.otherItemId, s]));
 
-  const apply = async (label: string, before: ItemChange[], after: ItemChange[], record = true): Promise<boolean> => {
-    if (!versionId) return false;
-    setBusy(true);
+  /** Show the change at once, then save in the background (saves run one after another). */
+  const applyLocal = (changes: Array<Partial<ScheduleItem> & { itemId: string }>) => {
+    const byId = new Map(changes.map((c) => [c.itemId, c]));
+    setData((d) =>
+      d && {
+        ...d,
+        context: {
+          ...d.context,
+          items: d.context.items.map((i) => {
+            const c = byId.get(i.id);
+            if (!c) return i;
+            const { itemId: _id, ...patch } = c;
+            return { ...i, ...patch };
+          }),
+        },
+      },
+    );
+  };
+  const save = (send: () => Promise<unknown>, onFail?: () => void) => {
+    setSaving((n) => n + 1);
+    saveQueue.current = saveQueue.current
+      .then(send)
+      .catch(async (e) => {
+        setErr(`${e instanceof Error ? e.message : String(e)} — โหลดตารางล่าสุดจากเซิร์ฟเวอร์แล้ว`);
+        onFail?.();
+        await load(true);
+      })
+      .finally(() => setSaving((n) => n - 1));
+  };
+  const apply = (label: string, before: ItemChange[], after: ItemChange[], record = true) => {
+    if (!versionId) return;
     setErr('');
-    try {
-      await api.moveItems(versionId, after);
-      if (record) {
-        setHistory((h) => [...h.slice(0, pos), { label, before, after, at: new Date() }]);
-        setPos((p) => p + 1);
-      }
-      setMsg(label);
-      setSelectedId(null);
-      await load(true);
-      return true;
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
-      return false;
-    } finally {
-      setBusy(false);
+    applyLocal(after);
+    if (record) {
+      setHistory((h) => [...h.slice(0, pos), { label, before, after, at: new Date() }]);
+      setPos(pos + 1);
     }
+    setMsg(label);
+    setSelectedId(null);
+    // A failed save is rolled back by the reload; drop its history entry so undo stays truthful.
+    save(() => api.moveItems(versionId, after), record ? () => {
+      setHistory((h) => h.slice(0, -1));
+      setPos((p) => Math.max(0, p - 1));
+    } : undefined);
   };
 
   const moveTo = (item: ScheduleItem, day: number, period: number) => {
@@ -286,14 +311,14 @@ export function WorkspacePage({ profile, role }: { profile: string; role: Accoun
       setErr(opt?.reason ?? 'ย้ายไปช่องนี้ไม่ได้');
       return;
     }
-    void apply(
+    apply(
       `ย้าย ${subjectOf(item)?.subjectCode ?? ''} (${groupsOf(item)}) จาก ${slotText(item.dayOfWeek, item.startPeriod, item.duration)} → ${slotText(day, period, item.duration)}`,
       [posOf(item)],
       [{ itemId: item.id, dayOfWeek: day, startPeriod: period, status: 'scheduled' }],
     );
   };
   const swap = (a: ScheduleItem, b: ScheduleItem) =>
-    void apply(
+    apply(
       `สลับ ${subjectOf(a)?.subjectCode ?? ''} (${slotText(a.dayOfWeek, a.startPeriod)}) ⇄ ${subjectOf(b)?.subjectCode ?? ''} (${slotText(b.dayOfWeek, b.startPeriod)})`,
       [posOf(a), posOf(b)],
       [
@@ -302,7 +327,7 @@ export function WorkspacePage({ profile, role }: { profile: string; role: Accoun
       ],
     );
   const toTray = (item: ScheduleItem) =>
-    void apply(
+    apply(
       `นำ ${subjectOf(item)?.subjectCode ?? ''} (${groupsOf(item)}) ออกจาก ${slotText(item.dayOfWeek, item.startPeriod, item.duration)} ไปไว้ที่ถาดรอจัด`,
       [posOf(item)],
       [{ itemId: item.id, dayOfWeek: null, startPeriod: null, status: 'unplaced_tray' }],
@@ -310,25 +335,21 @@ export function WorkspacePage({ profile, role }: { profile: string; role: Accoun
   const undo = () => {
     const e = history[pos - 1];
     if (!e) return;
-    void apply(`ย้อนกลับ: ${e.label}`, [], e.before, false).then((ok) => ok && setPos(pos - 1));
+    setPos(pos - 1);
+    apply(`ย้อนกลับ: ${e.label}`, [], e.before, false);
   };
   const redo = () => {
     const e = history[pos];
     if (!e) return;
-    void apply(`ทำซ้ำ: ${e.label}`, [], e.after, false).then((ok) => ok && setPos(pos + 1));
+    setPos(pos + 1);
+    apply(`ทำซ้ำ: ${e.label}`, [], e.after, false);
   };
-  const toggleLock = async (item: ScheduleItem) => {
+  const toggleLock = (item: ScheduleItem) => {
     if (!versionId) return;
-    setBusy(true);
-    try {
-      await api.moveItem(versionId, item.id, { isLocked: !item.isLocked });
-      setMsg(item.isLocked ? 'ปลดล็อกคาบแล้ว' : 'ล็อกคาบแล้ว (ย้าย/สลับไม่ได้)');
-      await load(true);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
+    const isLocked = !item.isLocked;
+    applyLocal([{ itemId: item.id, isLocked }]);
+    setMsg(isLocked ? 'ล็อกคาบแล้ว (ย้าย/สลับไม่ได้)' : 'ปลดล็อกคาบแล้ว');
+    save(() => api.moveItem(versionId, item.id, { isLocked }));
   };
 
   const onCardClick = (item: ScheduleItem) => {
@@ -378,10 +399,13 @@ export function WorkspacePage({ profile, role }: { profile: string; role: Accoun
           </p>
         </div>
         {canEdit && (
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <span className={`text-xs ${saving ? 'text-gold-600' : 'text-emerald-700'}`} aria-live="polite">
+              {saving ? 'กำลังบันทึก…' : history.length > 0 ? 'บันทึกแล้ว ✓' : ''}
+            </span>
             <button
               type="button"
-              disabled={pos === 0 || busy}
+              disabled={pos === 0}
               onClick={undo}
               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50 disabled:opacity-40"
             >
@@ -389,7 +413,7 @@ export function WorkspacePage({ profile, role }: { profile: string; role: Accoun
             </button>
             <button
               type="button"
-              disabled={pos >= history.length || busy}
+              disabled={pos >= history.length}
               onClick={redo}
               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50 disabled:opacity-40"
             >
@@ -401,7 +425,7 @@ export function WorkspacePage({ profile, role }: { profile: string; role: Accoun
               className="rounded-lg border border-slate-300 bg-white p-2 hover:bg-slate-50"
               aria-label="โหลดใหม่"
             >
-              <RefreshCw className={`h-4 w-4 ${busy ? 'animate-spin' : ''}`} />
+              <RefreshCw className="h-4 w-4" />
             </button>
           </div>
         )}
@@ -452,7 +476,19 @@ export function WorkspacePage({ profile, role }: { profile: string; role: Accoun
       {msg && !err && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">✓ {msg}</div>}
       {err && <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{err}</div>}
 
-      <DndContext sensors={sensors} onDragStart={(e) => setSelectedId((e.active.data.current as { itemId: string }).itemId)} onDragEnd={onDragEnd}>
+      <DndContext
+        sensors={sensors}
+        onDragStart={(e) => {
+          const id = (e.active.data.current as { itemId: string }).itemId;
+          setSelectedId(id);
+          setDragging(id);
+        }}
+        onDragCancel={() => setDragging(null)}
+        onDragEnd={(e) => {
+          setDragging(null);
+          onDragEnd(e);
+        }}
+      >
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_20rem]">
           <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
             <table className="w-full border-collapse text-xs">
@@ -537,8 +573,7 @@ export function WorkspacePage({ profile, role }: { profile: string; role: Accoun
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         type="button"
-                        disabled={busy}
-                        onClick={() => void toggleLock(selected)}
+                        onClick={() => toggleLock(selected)}
                         className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium hover:bg-slate-50"
                       >
                         {selected.isLocked ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
@@ -547,7 +582,6 @@ export function WorkspacePage({ profile, role }: { profile: string; role: Accoun
                       {selected.status !== 'unplaced_tray' && !selected.isLocked && (
                         <button
                           type="button"
-                          disabled={busy}
                           onClick={() => toTray(selected)}
                           className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium hover:bg-slate-50"
                         >
@@ -567,7 +601,6 @@ export function WorkspacePage({ profile, role }: { profile: string; role: Accoun
                           <button
                             key={`${m.day}:${m.period}`}
                             type="button"
-                            disabled={busy}
                             onClick={() => moveTo(selected, m.day, m.period)}
                             className="rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-800 hover:bg-emerald-100"
                           >
@@ -590,8 +623,7 @@ export function WorkspacePage({ profile, role }: { profile: string; role: Accoun
                             <button
                               key={s.otherItemId}
                               type="button"
-                              disabled={busy}
-                              onClick={() => swap(selected, o)}
+                                onClick={() => swap(selected, o)}
                               className="block w-full rounded-md border border-sky-300 bg-sky-50 px-2 py-1.5 text-left text-xs hover:bg-sky-100"
                             >
                               <span className="font-semibold text-sky-900">{slotText(s.day, s.period, o.duration)}</span>
@@ -672,6 +704,19 @@ export function WorkspacePage({ profile, role }: { profile: string; role: Accoun
             )}
           </aside>
         </div>
+        <DragOverlay dropAnimation={null}>
+          {dragging &&
+            (() => {
+              const i = ctx.items.find((x) => x.id === dragging);
+              const subj = i && subjectOf(i);
+              return i ? (
+                <div className={`w-36 rounded-md border-2 border-indigo-600 p-1.5 text-[11px] font-semibold text-slate-800 shadow-xl ${colorOf(subj?.id ?? i.offeringId)}`}>
+                  {subj?.subjectCode} {subj?.subjectName}
+                  <div className="font-normal text-slate-500">{i.duration} คาบ · {groupsOf(i)}</div>
+                </div>
+              ) : null;
+            })()}
+        </DragOverlay>
       </DndContext>
     </div>
   );

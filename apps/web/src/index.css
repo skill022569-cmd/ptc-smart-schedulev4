@@ -1,23 +1,25 @@
 @import "tailwindcss";
 
-/* Thai government look: navy primary (replaces the indigo scale used across all pages) + gold accent. */
+/* College colours (วิทยาลัยการอาชีพโพนทอง seal): maroon primary — replaces the indigo scale used
+   across all pages — gold accent and the seal's silver ring as the page background. */
 @theme {
-  --color-indigo-50: #eef3fb;
-  --color-indigo-100: #d9e4f5;
-  --color-indigo-200: #b6caeb;
-  --color-indigo-300: #8aa8dc;
-  --color-indigo-400: #5b80c7;
-  --color-indigo-500: #3a60ad;
-  --color-indigo-600: #1f4590;
-  --color-indigo-700: #183873;
-  --color-indigo-800: #132d5c;
-  --color-indigo-900: #0f2448;
-  --color-indigo-950: #0a1830;
-  --color-gold-100: #f8efd0;
-  --color-gold-300: #e6cb73;
-  --color-gold-400: #d9b84a;
-  --color-gold-500: #c9a227;
-  --color-gold-600: #a88418;
+  --color-indigo-50: #fcf4f4;
+  --color-indigo-100: #f8e3e3;
+  --color-indigo-200: #efc4c5;
+  --color-indigo-300: #e09a9c;
+  --color-indigo-400: #cb6467;
+  --color-indigo-500: #b03b3e;
+  --color-indigo-600: #962326;
+  --color-indigo-700: #84181c;
+  --color-indigo-800: #761418;
+  --color-indigo-900: #5c0f12;
+  --color-indigo-950: #3a080a;
+  --color-gold-100: #fbefd2;
+  --color-gold-300: #f3d38f;
+  --color-gold-400: #ebbb5e;
+  --color-gold-500: #e0a43a;
+  --color-gold-600: #b8842a;
+  --color-slate-50: #f3f5f7;
 }
 
 @layer base {

@@ -545,11 +545,9 @@ export function createApiRouter(): Router {
   ) => {
     const ws = await loadContextFromDb({ versionId });
     try {
+      // No re-evaluation here: the editor updates optimistically; scores refresh on the next schedule load.
       const items = await updateScheduleItemsAtomic({ versionId, ctx: ws.ctx, changes, updatedBy: req.user?.accountId ?? null });
-      invalidateWorkspaceCache();
-      const nextWs = await loadContextFromDb({ versionId });
-      const { report, qualitySummary } = evaluateWorkspaceCached(nextWs.ctx, { includePassedExplanations: false });
-      res.json({ item: items[0], items, report, qualitySummary });
+      res.json({ item: items[0], items });
     } catch (err) {
       const causeMsg = (err as { cause?: { message?: string } } | null)?.cause?.message ?? '';
       const msg = causeMsg || (err instanceof Error ? err.message : String(err));

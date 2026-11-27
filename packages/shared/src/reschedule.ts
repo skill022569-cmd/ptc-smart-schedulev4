@@ -116,15 +116,15 @@ export function planCellActions(ctx: RescheduleContext, itemId: string): CellPla
         reason = windowProblem(item, base.day, base.period) ?? windowProblem(other, item.dayOfWeek, item.startPeriod);
       }
       if (!reason) {
-        const trial = occ.clone();
-        trial.removeItem(item.id);
-        trial.removeItem(other.id);
-        const a = trial.findClashes(params(item, base.day, base.period))[0];
+        // Take both out, test each in the other's slot, then put both back (cheaper than cloning the index).
+        occ.removeItem(item.id);
+        occ.removeItem(other.id);
+        const a = occ.findClashes(params(item, base.day, base.period))[0];
+        const b = a ? undefined : occ.findClashes(params(other, item.dayOfWeek, item.startPeriod))[0];
+        occ.addItem(params(item, item.dayOfWeek, item.startPeriod));
+        occ.addItem(params(other, base.day, base.period));
         if (a) reason = describe(a, a.resourceType === 'teacher' ? `${myTeachers || 'ครู'} ไม่ว่างในคาบปลายทาง: ` : '');
-        else {
-          const b = trial.findClashes(params(other, item.dayOfWeek, item.startPeriod))[0];
-          if (b) reason = describe(b, b.resourceType === 'teacher' ? `${otherTeachers || 'ครู'} ไม่ว่างในคาบต้นทาง: ` : '');
-        }
+        else if (b) reason = describe(b, b.resourceType === 'teacher' ? `${otherTeachers || 'ครู'} ไม่ว่างในคาบต้นทาง: ` : '');
       }
       swaps.push(reason ? { ...base, ok: false, reason } : { ...base, ok: true });
     }

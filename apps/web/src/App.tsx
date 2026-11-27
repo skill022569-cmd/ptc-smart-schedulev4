@@ -2,7 +2,6 @@ import { Suspense, lazy, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   Activity,
-  Award,
   BarChart3,
   Calendar,
   Database,
@@ -265,7 +264,7 @@ export function App() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-      <header className="sticky top-0 z-30 bg-indigo-900 text-white shadow-md">
+      <header className="sticky top-0 z-30 bg-linear-to-r from-indigo-900 via-indigo-800 to-indigo-900 text-white shadow-md">
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <button
@@ -276,12 +275,16 @@ export function App() {
             >
               <Menu className="h-5 w-5" />
             </button>
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-gold-400 bg-indigo-800">
-              <Award className="h-6 w-6 text-gold-400" />
-            </div>
+            <img
+              src="/college-logo.png"
+              alt="ตราวิทยาลัยการอาชีพโพนทอง"
+              width={52}
+              height={52}
+              className="h-13 w-13 shrink-0 rounded-full bg-white shadow-md ring-2 ring-gold-400"
+            />
             <div className="min-w-0 leading-tight">
               <div className="truncate text-base font-bold sm:text-lg">ระบบจัดตารางเรียนอัตโนมัติด้วยปัญญาประดิษฐ์</div>
-              <div className="truncate text-xs text-indigo-200">AI-Based Automatic Timetable Scheduling System · PTC Smart Schedule V4</div>
+              <div className="truncate text-xs text-gold-300">วิทยาลัยการอาชีพโพนทอง · Phonthong Industrial and Community Education College</div>
             </div>
           </div>
 
@@ -353,7 +356,10 @@ export function App() {
           <div className="fixed inset-0 bg-slate-900/50" onClick={() => setMobileMenuOpen(false)} />
           <aside className="relative z-10 flex w-72 flex-col bg-white shadow-xl">
             <div className="flex items-center justify-between border-b-4 border-gold-500 bg-indigo-900 px-4 py-3 text-white">
-              <span className="font-bold">เมนูระบบ</span>
+              <span className="flex items-center gap-2 font-bold">
+                <img src="/college-logo.png" alt="" width={28} height={28} className="h-7 w-7 rounded-full bg-white" />
+                เมนูระบบ
+              </span>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
@@ -391,7 +397,7 @@ export function App() {
             </ErrorBoundary>
           </main>
           <footer className="border-t border-slate-200 bg-white px-6 py-3 text-center text-xs text-slate-500">
-            ระบบจัดตารางเรียนอัตโนมัติด้วยเทคโนโลยีปัญญาประดิษฐ์ · ฉบับฝึกซ้อมการแข่งขันทักษะวิชาชีพ สาขาเทคโนโลยีปัญญาประดิษฐ์
+            วิทยาลัยการอาชีพโพนทอง · ระบบจัดตารางเรียนอัตโนมัติด้วยเทคโนโลยีปัญญาประดิษฐ์ (ฉบับฝึกซ้อมการแข่งขันทักษะวิชาชีพ)
           </footer>
         </div>
       </div>
