@@ -7,9 +7,14 @@
  * makeup date is an owed class ("คาบค้างสอน"); setting a makeup date/period (weekend allowed) pays it.
  */
 import type { ScheduleException, ScheduleItem, ScheduleItemTeacher } from './types';
-import { planCellActions, type RescheduleContext } from './reschedule';
+import { placementProblem, type RescheduleContext } from './reschedule';
 
 export type OccurrenceKind = 'regular' | 'moved' | 'makeup' | 'away';
+/** A dated change: move to `to` (null = cancel) and/or use another room (`roomId`). */
+export interface DatedChange {
+  to: { date: string; period: number } | null;
+  roomId?: string | null;
+}
 
 export interface Occurrence {
   id: string;
@@ -70,7 +75,8 @@ export function weekOccurrences(
       originalDate,
       exception: ex,
       teacherIds: ex?.action === 'substitute' && ex.substituteStaffId ? [ex.substituteStaffId] : (teachersOf.get(item.id) ?? []),
-      roomId: ex?.action === 'room_change' && ex.newRoomId ? ex.newRoomId : item.roomId,
+      // room_change, or a move/makeup that also switched room (another classroom / the dome)
+      roomId: ex?.newRoomId ?? item.roomId,
     };
     if (ex && (ex.action === 'makeup' || ex.action === 'cancel')) {
       const slot = makeupSlotOf(ex);
@@ -145,9 +151,10 @@ export function datedPlacementProblem(
   occ: Occurrence,
   date: string,
   period: number,
+  roomId?: string | null,
 ): string | undefined {
   const week = weekOccurrences(ctx.items, ctx.itemTeachers, exceptions, mondayOf(date)).filter((o) => o.id !== occ.id);
   const planCtx = weekPlanningContext(ctx, week, [{ ...occ, date: null, period: null }]);
-  const move = planCellActions(planCtx, occ.id).moves.find((m) => m.day === dayOfWeekOf(date) && m.period === period);
-  return move ? move.reason : 'ไม่มีคาบนี้ในวันดังกล่าว';
+  if (!planCtx.timeSlots.some((t) => t.period === period)) return 'ไม่มีคาบนี้ในวันดังกล่าว';
+  return placementProblem(planCtx, occ.id, dayOfWeekOf(date), period, roomId ?? undefined);
 }

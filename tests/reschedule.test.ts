@@ -46,6 +46,51 @@ describe('planCellActions (single-cell move & swap)', () => {
     expect(tried).toBeGreaterThan(0);
   });
 
+  it('room changes it offers (move + new room, or new room in place) stay clash-free and fit the group', () => {
+    // Fill every room except one big shared hall so room-blocked moves exist.
+    const roomAt = (items: ScheduleItem[], id: string, roomId: string) => items.map((i) => (i.id === id ? { ...i, roomId } : i));
+    const size = (it: ScheduleItem) =>
+      ctx.offeringGroups.filter((g) => g.offeringId === it.offeringId).reduce((n, g) => n + (ctx.studentGroups.find((s) => s.id === g.groupId)?.studentCount ?? 0), 0);
+    let checked = 0;
+    for (const item of placed.slice(0, 12)) {
+      const plan = planCellActions(ctx, item.id);
+      for (const r of plan.rooms) {
+        const room = ctx.rooms.find((x) => x.id === r.id)!;
+        expect(room.allowMultiGroup || room.capacity >= size(item), `${r.code} too small`).toBe(true);
+        expect(clashCount(roomAt(ctx.items, item.id, r.id)), `${item.id} in ${r.code}`).toBe(0);
+        checked++;
+      }
+      for (const m of plan.moves.filter((x) => x.altRooms)) {
+        for (const r of m.altRooms!.slice(0, 3)) {
+          expect(clashCount(roomAt(at(ctx.items, item.id, m.day, m.period), item.id, r.id)), `${item.id} -> ${m.day}:${m.period} ${r.code}`).toBe(0);
+          checked++;
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it('a room-blocked move offers exactly the rooms that are really free; teacher clashes offer none', () => {
+    const roomAt = (items: ScheduleItem[], id: string, roomId: string) => items.map((i) => (i.id === id ? { ...i, roomId } : i));
+    const size = (it: ScheduleItem) =>
+      ctx.offeringGroups.filter((g) => g.offeringId === it.offeringId).reduce((n, g) => n + (ctx.studentGroups.find((s) => s.id === g.groupId)?.studentCount ?? 0), 0);
+    let roomBlocked = 0;
+    for (const item of placed.slice(0, 8)) {
+      for (const m of planCellActions(ctx, item.id).moves) {
+        if (m.reason?.includes('ติดสอน')) expect(m.altRooms).toBeUndefined();
+        if (!m.reason?.startsWith('ห้อง')) continue;
+        roomBlocked++;
+        const reallyFree = ctx.rooms
+          .filter((r) => r.id !== item.roomId && (r.allowMultiGroup || r.capacity >= size(item)))
+          .filter((r) => clashCount(roomAt(at(ctx.items, item.id, m.day, m.period), item.id, r.id)) === 0)
+          .map((r) => r.id)
+          .sort();
+        expect((m.altRooms ?? []).map((r) => r.id).sort(), `${item.id} -> ${m.day}:${m.period}`).toEqual(reallyFree);
+      }
+    }
+    expect(roomBlocked).toBeGreaterThan(0);
+  });
+
   it('gives the same answer every time (swap checks restore the index)', () => {
     const id = placed[3]!.id;
     expect(planCellActions(ctx, id)).toEqual(planCellActions(ctx, id));

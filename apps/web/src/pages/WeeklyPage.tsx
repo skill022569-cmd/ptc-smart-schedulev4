@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowRightLeft, BookOpen, CalendarClock, Check, ChevronLeft, ChevronRight, Inbox, MoveRight, RotateCcw, Send, X, XCircle } from 'lucide-react';
+import { ArrowRightLeft, BookOpen, CalendarClock, Check, ChevronLeft, ChevronRight, DoorOpen, Inbox, MoveRight, Plus, RotateCcw, Send, X, XCircle } from 'lucide-react';
 import {
   DAY_NAMES_TH,
   addDays,
@@ -13,6 +13,7 @@ import {
   weekPlanningContext,
   type AccountRole,
   type Occurrence,
+  type RoomChoice,
   type ScheduleException,
 } from '@ptc/shared';
 import { PageSkeleton } from '../components/PageSkeleton';
@@ -58,6 +59,9 @@ export function WeeklyPage({
   const [placingId, setPlacingId] = useState<string | null>(null);
   const [showPermanent, setShowPermanent] = useState(false);
   const [unitDraft, setUnitDraft] = useState<string | null>(null);
+  /** Choosing a room for a move (or a room change in place); permanent = master timetable. */
+  const [roomPick, setRoomPick] = useState<{ date: string; day: number; period: number; rooms: RoomChoice[]; permanent: boolean } | null>(null);
+  const [newRoom, setNewRoom] = useState<{ code: string; capacity: string; shared: boolean } | null>(null);
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
 
@@ -123,7 +127,11 @@ export function WeeklyPage({
   const subjectOf = (o: Occurrence) => maps.subj.get(maps.off.get(o.item.offeringId)?.subjectId ?? '');
   const teachers = (o: Occurrence) => o.teacherIds.map((t) => maps.staff.get(t)?.fullName ?? '').join(', ');
   const groupsText = (o: Occurrence) => groupsOf(o).map((g) => maps.group.get(g)?.groupCode ?? '').join(', ');
-  const roomText = (o: Occurrence) => (o.roomId ? `ห้อง ${maps.room.get(o.roomId)?.roomCode ?? ''}` : 'ไม่ระบุห้อง');
+  const roomLabel = (roomId: string | null) => {
+    const r = roomId ? maps.room.get(roomId) : undefined;
+    return !r ? 'ไม่ระบุห้อง' : r.allowMultiGroup ? `${r.roomCode} (ใช้ร่วม/โดม)` : `ห้อง ${r.roomCode}`;
+  };
+  const roomText = (o: Occurrence) => roomLabel(o.roomId);
   const slotText = (date: string | null, p: number | null) => (date && p ? `${DAY_SHORT[dayOfWeekOf(date)]} ${thDate(date)} คาบ ${p}` : 'ยังไม่ได้สอน');
   const weekNo = termWeekOf(weekly.termStart, weekStart);
   const unitOf = (o: Occurrence) => {
@@ -144,7 +152,7 @@ export function WeeklyPage({
   const lunch = view === 'group' ? maps.group.get(target)?.lunchPeriod : undefined;
 
   // ---- actions (screen updates first, server confirms; a refusal reloads the server copy) ----
-  const localSet = (o: Occurrence, to: { date: string; period: number } | null) =>
+  const localSet = (o: Occurrence, to: { date: string; period: number } | null, roomId: string | null = null) =>
     setExceptions((xs) => [
       ...xs.filter((e) => !(e.itemId === o.item.id && e.exceptionDate === o.originalDate)),
       {
@@ -153,9 +161,9 @@ export function WeeklyPage({
         issueId: null,
         itemId: o.item.id,
         exceptionDate: o.originalDate,
-        action: to ? 'makeup' : 'cancel',
+        action: to ? (roomId && to.date === o.originalDate && to.period === o.item.startPeriod ? 'room_change' : 'makeup') : 'cancel',
         substituteStaffId: null,
-        newRoomId: null,
+        newRoomId: to ? roomId : null,
         makeupDate: to?.date ?? null,
         makeupPeriod: to?.period ?? null,
       },
@@ -166,6 +174,7 @@ export function WeeklyPage({
     setSelectedId(null);
     setPlacingId(null);
     setShowPermanent(false);
+    setRoomPick(null);
     try {
       await send();
     } catch (e) {
@@ -177,14 +186,18 @@ export function WeeklyPage({
   };
   const ask = (label: string, change: RequestChange) =>
     void run(`ส่งคำขอ${label}ถึงผู้จัดตารางแล้ว — รออนุมัติ`, () => api.createRequest({ ...change, requestedBy: actor }));
-  const moveTo = (o: Occurrence, date: string, period: number) => {
+  const moveTo = (o: Occurrence, date: string, period: number, roomId: string | null = null) => {
     const what = `${subjectOf(o)?.subjectCode ?? ''} (${groupsText(o)})`;
-    if (!isAdmin) return ask(`${o.date ? 'ย้าย' : 'ลงชดเชย'} ${what} → ${slotText(date, period)} `, { kind: 'move_week', itemId: o.item.id, date: o.originalDate, to: { date, period } });
-    localSet(o, { date, period });
-    void run(
-      o.kind === 'away' || !o.date ? `ลงสอนชดเชย ${what} ใน ${slotText(date, period)}` : `ย้าย ${what} เฉพาะสัปดาห์นี้ → ${slotText(date, period)}`,
-      () => api.setDatedSlot(o.item.id, o.originalDate, { date, period }),
-    );
+    const inRoom = roomId ? ` ที่ ${roomLabel(roomId)}` : '';
+    const sameSlot = o.date === date && o.period === period;
+    const label = sameSlot
+      ? `เปลี่ยนห้อง ${what} ${slotText(date, period)} →${inRoom}`
+      : !o.date
+        ? `ลงสอนชดเชย ${what} ใน ${slotText(date, period)}${inRoom}`
+        : `ย้าย ${what} เฉพาะสัปดาห์นี้ → ${slotText(date, period)}${inRoom}`;
+    if (!isAdmin) return ask(`${label} `, { kind: 'move_week', itemId: o.item.id, date: o.originalDate, to: { date, period }, roomId });
+    localSet(o, { date, period }, roomId);
+    void run(label, () => api.setDatedSlot(o.item.id, o.originalDate, { date, period }, roomId));
   };
   const cancel = (o: Occurrence) => {
     if (!isAdmin) return ask(`งดสอน ${subjectOf(o)?.subjectCode ?? ''} ${slotText(o.date, o.period)} `, { kind: 'cancel_week', itemId: o.item.id, date: o.originalDate });
@@ -206,15 +219,15 @@ export function WeeklyPage({
     localSet(b, { date: a.date!, period: a.period! });
     void run(text, () => api.swapDated(A, B));
   };
-  const permanent = (o: Occurrence, day: number, period: number) => {
-    const text = `${subjectOf(o)?.subjectCode} → ${DAY_NAMES_TH[day]} คาบ ${period} (ทุกสัปดาห์)`;
+  const permanent = (o: Occurrence, day: number, period: number, roomId: string | null = null) => {
+    const text = `${subjectOf(o)?.subjectCode} → ${DAY_NAMES_TH[day]} คาบ ${period}${roomId ? ` ที่ ${roomLabel(roomId)}` : ''} (ทุกสัปดาห์)`;
     if (isAdmin) {
       void run(`ย้ายถาวร ${text}`, () =>
-        api.moveItems(weekly.versionId, [{ itemId: o.item.id, dayOfWeek: day, startPeriod: period, status: 'scheduled' }]).then(() =>
+        api.moveItems(weekly.versionId, [{ itemId: o.item.id, dayOfWeek: day, startPeriod: period, status: 'scheduled', ...(roomId ? { roomId } : {}) }]).then(() =>
           api.scheduleLatest(profile, true).then(setData),
         ),
       );
-    } else ask(`ย้ายถาวร ${text} `, { kind: 'move_permanent', itemId: o.item.id, day, period });
+    } else ask(`ย้ายถาวร ${text} `, { kind: 'move_permanent', itemId: o.item.id, day, period, roomId });
   };
   const saveUnit = (o: Occurrence, unit: string) => {
     const code = subjectOf(o)?.subjectCode;
@@ -236,10 +249,11 @@ export function WeeklyPage({
     if (r.kind === 'swap_week') return `สลับ ${occOf(r.payload.a)} ⇄ ${occOf(r.payload.b)}`;
     const dated = r.payload.itemId && r.payload.date ? { itemId: r.payload.itemId, date: r.payload.date } : undefined;
     if (r.kind === 'cancel_week') return `งดสอน ${occOf(dated)}`;
-    if (r.kind === 'move_week') return `ย้าย ${occOf(dated)} → ${slotText(r.payload.to?.date ?? null, r.payload.to?.period ?? null)}`;
+    if (r.kind === 'move_week')
+      return `ย้าย ${occOf(dated)} → ${slotText(r.payload.to?.date ?? null, r.payload.to?.period ?? null)}${r.payload.roomId ? ` ที่ ${roomLabel(r.payload.roomId)}` : ''}`;
     const it = ctx.items.find((i) => i.id === r.payload.itemId);
     const s = it && maps.subj.get(maps.off.get(it.offeringId)?.subjectId ?? '');
-    return `ย้ายถาวร ${s?.subjectCode ?? ''} ${s?.subjectName ?? ''} → ${DAY_NAMES_TH[r.payload.day ?? 1]} คาบ ${r.payload.period}`;
+    return `ย้ายถาวร ${s?.subjectCode ?? ''} ${s?.subjectName ?? ''} → ${DAY_NAMES_TH[r.payload.day ?? 1]} คาบ ${r.payload.period}${r.payload.roomId ? ` ที่ ${roomLabel(r.payload.roomId)}` : ''}`;
   };
   const nameOf = (code: string | null) => ctx.staff.find((s) => s.employeeCode === code)?.fullName ?? code ?? '';
   const forMe = isAdmin ? weekly.requests.filter((r) => r.status.startsWith('pending')) : [];
@@ -281,8 +295,10 @@ export function WeeklyPage({
     const m = moveAt.get(`${day}:${period}`);
     const o = placing ?? selected;
     if (!o || !m) return;
-    if (!m.ok) setErr(m.reason ?? 'ลงช่องนี้ไม่ได้');
-    else moveTo(o, addDays(weekStart, day - 1), period);
+    const date = addDays(weekStart, day - 1);
+    if (m.ok) moveTo(o, date, period);
+    else if (m.altRooms?.length) setRoomPick({ date, day, period, rooms: m.altRooms, permanent: false });
+    else setErr(m.reason ?? 'ลงช่องนี้ไม่ได้');
   };
   const clickCard = (o: Occurrence) => {
     if (isStudent) return;
@@ -301,7 +317,8 @@ export function WeeklyPage({
 
   const okMoves = (plan?.moves ?? []).filter((m) => m.ok);
   const okSwaps = (plan?.swaps ?? []).filter((s) => s.ok);
-  const permanentMoves = showPermanent && selected ? planCellActions(ctx, selected.item.id).moves.filter((m) => m.ok) : [];
+  const masterPlan = showPermanent && selected ? planCellActions(ctx, selected.item.id) : null;
+  const permanentMoves = masterPlan ? masterPlan.moves.filter((m) => m.ok || m.altRooms?.length) : [];
   const today = toIsoDate(new Date());
 
   return (
@@ -421,12 +438,20 @@ export function WeeklyPage({
                     {blocksOf(day).map(({ period, span, here }) => {
                       const m = moveAt.get(`${day}:${period}`);
                       const actionable = !!m && !!(placing ?? (selected && canAct(selected)));
-                      const tone = actionable ? (m!.ok ? 'bg-emerald-50 hover:bg-emerald-100 cursor-pointer' : 'bg-slate-100') : period === lunch && span === 1 ? 'bg-gold-100/50' : '';
+                      const tone = actionable
+                        ? m!.ok
+                          ? 'bg-emerald-50 hover:bg-emerald-100 cursor-pointer'
+                          : m!.altRooms?.length
+                            ? 'bg-amber-50 hover:bg-amber-100 cursor-pointer'
+                            : 'bg-slate-100'
+                        : period === lunch && span === 1
+                          ? 'bg-gold-100/50'
+                          : '';
                       return (
                         <td
                           key={period}
                           colSpan={span}
-                          title={actionable && !m!.ok ? m!.reason : undefined}
+                          title={actionable && !m!.ok ? (m!.altRooms?.length ? `ย้ายได้ถ้าเปลี่ยนห้อง (${m!.altRooms.length} ห้องว่าง) — ${m!.reason}` : m!.reason) : undefined}
                           onClick={() => actionable && clickCell(day, period)}
                           className={`h-16 min-w-28 border border-slate-200 p-1 align-top ${tone}`}
                         >
@@ -456,6 +481,7 @@ export function WeeklyPage({
                                   className={`flex min-h-14 flex-1 flex-col items-center justify-center rounded-md border px-2 py-1 text-center text-[11px] leading-snug ${colorOf(s?.id ?? o.item.offeringId)} ${ring}`}
                                 >
                                   {badge && <span className={`mb-0.5 rounded px-1.5 text-[10px] font-semibold ${badge.cls}`}>{badge.text}</span>}
+                                  {o.roomId !== o.item.roomId && <span className="mb-0.5 rounded bg-amber-100 px-1.5 text-[10px] font-semibold text-amber-800">เปลี่ยนห้อง</span>}
                                   {pendingKeys.has(o.id) && <span className="mb-0.5 rounded bg-indigo-100 px-1.5 text-[10px] font-semibold text-indigo-800">⏳ รออนุมัติ</span>}
                                   <span className="font-semibold text-slate-800">
                                     {s?.subjectCode} {s?.subjectName}
@@ -468,6 +494,9 @@ export function WeeklyPage({
                               );
                             })}
                             {actionable && m!.ok && here.length === 0 && <span className="pt-3 text-center text-[10px] font-semibold text-emerald-700">ลงที่นี่</span>}
+                            {actionable && !m!.ok && !!m!.altRooms?.length && here.length === 0 && (
+                              <span className="pt-3 text-center text-[10px] font-semibold text-amber-700">เปลี่ยนห้อง</span>
+                            )}
                           </div>
                         </td>
                       );
@@ -564,10 +593,30 @@ export function WeeklyPage({
                       <div className="mt-1 flex max-h-28 flex-wrap gap-1 overflow-y-auto">
                         {permanentMoves.length === 0 && <span className="text-xs text-slate-500">ไม่มีช่องว่างในตารางหลัก</span>}
                         {permanentMoves.map((m) => (
-                          <button key={`${m.day}:${m.period}`} type="button" onClick={() => permanent(selected, m.day, m.period)} className="rounded border border-slate-300 px-1.5 py-0.5 text-[11px] hover:bg-slate-50">
+                          <button
+                            key={`${m.day}:${m.period}`}
+                            type="button"
+                            onClick={() =>
+                              m.ok ? permanent(selected, m.day, m.period) : setRoomPick({ date: '', day: m.day, period: m.period, rooms: m.altRooms!, permanent: true })
+                            }
+                            className={`rounded border px-1.5 py-0.5 text-[11px] ${m.ok ? 'border-slate-300 hover:bg-slate-50' : 'border-amber-300 bg-amber-50 text-amber-900'}`}
+                            title={m.ok ? undefined : 'ต้องเปลี่ยนห้อง'}
+                          >
                             {DAY_SHORT[m.day]} คาบ {m.period}
+                            {!m.ok && ' 🚪'}
                           </button>
                         ))}
+                        {masterPlan && masterPlan.rooms.length > 0 && selected.item.dayOfWeek && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRoomPick({ date: '', day: selected.item.dayOfWeek!, period: selected.item.startPeriod!, rooms: masterPlan.rooms, permanent: true })
+                            }
+                            className="rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[11px] text-amber-900"
+                          >
+                            เปลี่ยนห้องถาวร (เวลาเดิม)
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -588,6 +637,39 @@ export function WeeklyPage({
                       </button>
                     ))}
                   </div>
+
+                  {(() => {
+                    const viaRoom = (plan?.moves ?? []).filter((m) => !m.ok && m.altRooms?.length);
+                    const here = selected.date && selected.period ? (plan?.rooms ?? []) : [];
+                    return (
+                      <>
+                        <h3 className="mt-4 flex items-center gap-1.5 text-sm font-bold text-amber-800">
+                          <DoorOpen className="h-4 w-4" /> {isAdmin ? 'เปลี่ยนห้องเรียน' : 'ขอเปลี่ยนห้องเรียน'}
+                        </h3>
+                        <p className="text-[11px] text-slate-500">ห้องอื่นที่ว่าง จุคนพอ รวมโดม/ห้องใช้ร่วม</p>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          <button
+                            type="button"
+                            disabled={here.length === 0}
+                            onClick={() => setRoomPick({ date: selected.date!, day: dayOfWeekOf(selected.date!), period: selected.period!, rooms: here, permanent: false })}
+                            className="rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-40"
+                          >
+                            เวลาเดิม ({here.length} ห้อง)
+                          </button>
+                          {viaRoom.map((m) => (
+                            <button
+                              key={`${m.day}:${m.period}`}
+                              type="button"
+                              onClick={() => setRoomPick({ date: addDays(weekStart, m.day - 1), day: m.day, period: m.period, rooms: m.altRooms!, permanent: false })}
+                              className="rounded-md border border-amber-300 bg-white px-2 py-1 text-xs text-amber-900 hover:bg-amber-50"
+                            >
+                              {DAY_SHORT[m.day]} คาบ {m.period}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    );
+                  })()}
 
                   <h3 className="mt-4 flex items-center gap-1.5 text-sm font-bold text-sky-800">
                     <ArrowRightLeft className="h-4 w-4" /> {isAdmin ? 'สลับกับคาบอื่นในสัปดาห์นี้' : 'ขอสลับกับคาบอื่นในสัปดาห์นี้'} ({okSwaps.length})
@@ -710,6 +792,100 @@ export function WeeklyPage({
           )}
         </aside>
       </div>
+
+      {roomPick && selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-label="เลือกห้องเรียน">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">เลือกห้องเรียน</h2>
+                <p className="text-xs text-slate-500">
+                  {subjectOf(selected)?.subjectCode} · {roomPick.permanent ? `${DAY_NAMES_TH[roomPick.day]} คาบ ${roomPick.period} (ทุกสัปดาห์)` : slotText(roomPick.date, roomPick.period)} · ตอนนี้ {roomText(selected)}
+                </p>
+              </div>
+              <button type="button" onClick={() => setRoomPick(null)} className="rounded p-1 text-slate-400 hover:bg-slate-100" aria-label="ปิด">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="mt-3 grid max-h-72 grid-cols-2 gap-2 overflow-y-auto">
+              {roomPick.rooms.length === 0 && <p className="col-span-2 text-sm text-slate-500">ไม่มีห้องว่างในช่วงนี้</p>}
+              {roomPick.rooms.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() =>
+                    roomPick.permanent ? permanent(selected, roomPick.day, roomPick.period, r.id) : moveTo(selected, roomPick.date, roomPick.period, r.id)
+                  }
+                  className={`rounded-lg border p-2 text-left text-sm hover:brightness-95 ${r.shared ? 'border-gold-500 bg-gold-100' : 'border-slate-200 bg-slate-50'}`}
+                >
+                  <div className="font-semibold text-slate-800">{r.shared ? `🏟️ ${r.code}` : `ห้อง ${r.code}`}</div>
+                  <div className="text-[11px] text-slate-500">
+                    จุ {r.capacity} คน{r.shared ? ' · ใช้ร่วมหลายกลุ่มได้' : ''}
+                  </div>
+                </button>
+              ))}
+            </div>
+            {!isAdmin && <p className="mt-2 text-[11px] text-slate-500">เลือกห้องแล้วระบบจะส่งคำขอถึงผู้จัดตารางเพื่ออนุมัติ</p>}
+            {isAdmin &&
+              (newRoom ? (
+                <form
+                  className="mt-3 space-y-2 rounded-lg border border-slate-200 p-3"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const capacity = Number(newRoom.capacity);
+                    void run(`เพิ่ม${newRoom.shared ? 'โดม/ห้องใช้ร่วม' : 'ห้อง'} "${newRoom.code}" แล้ว — คลิกคาบอีกครั้งเพื่อย้ายไปห้องนี้`, async () => {
+                      await api.addRoom(newRoom.code.trim(), capacity, newRoom.shared);
+                      setNewRoom(null);
+                      setData(await api.scheduleLatest(profile, true));
+                    });
+                  }}
+                >
+                  <div className="text-xs font-semibold text-slate-700">เพิ่มห้องหรือโดมของวิทยาลัย</div>
+                  <input
+                    required
+                    maxLength={30}
+                    value={newRoom.code}
+                    onChange={(e) => setNewRoom({ ...newRoom, code: e.target.value })}
+                    placeholder="ชื่อ/รหัสห้อง เช่น โดมวิทยาลัย"
+                    className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"
+                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      required
+                      type="number"
+                      min={1}
+                      max={5000}
+                      value={newRoom.capacity}
+                      onChange={(e) => setNewRoom({ ...newRoom, capacity: e.target.value })}
+                      placeholder="ความจุ (คน)"
+                      className="w-32 rounded border border-slate-300 px-2 py-1.5 text-sm"
+                    />
+                    <label className="flex items-center gap-1 text-xs text-slate-700">
+                      <input type="checkbox" checked={newRoom.shared} onChange={(e) => setNewRoom({ ...newRoom, shared: e.target.checked })} />
+                      ใช้ร่วมหลายกลุ่มพร้อมกัน (โดม)
+                    </label>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <button type="button" onClick={() => setNewRoom(null)} className="rounded border border-slate-300 px-2.5 py-1 text-xs">
+                      ยกเลิก
+                    </button>
+                    <button type="submit" className="rounded bg-indigo-700 px-2.5 py-1 text-xs font-semibold text-white">
+                      บันทึกห้อง
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setNewRoom({ code: 'โดมวิทยาลัย', capacity: '500', shared: true })}
+                  className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-indigo-700 hover:underline"
+                >
+                  <Plus className="h-3.5 w-3.5" /> เพิ่มห้องหรือโดมของวิทยาลัย
+                </button>
+              ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

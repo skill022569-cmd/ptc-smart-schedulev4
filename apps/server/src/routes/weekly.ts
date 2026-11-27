@@ -13,6 +13,7 @@ import { z } from 'zod';
 import {
   datedPlacementProblem,
   mondayOf,
+  placementProblem,
   planCellActions,
   weekOccurrences,
   weekPlanningContext,
@@ -20,9 +21,9 @@ import {
   type ScheduleException,
 } from '@ptc/shared';
 import { db, pool } from '../db/client';
-import { scheduleExceptions } from '../db/schema';
+import { rooms as roomsTable, scheduleExceptions } from '../db/schema';
 import { updateScheduleItemsAtomic } from '../services/occupancy.service';
-import { loadContextFromDb } from '../services/schedule-loader.service';
+import { invalidateWorkspaceCache, loadContextFromDb } from '../services/schedule-loader.service';
 
 const ISO = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
@@ -73,7 +74,11 @@ async function putException(
   itemId: string,
   date: string,
   slot: { date: string; period: number } | null,
+  roomId: string | null = null,
+  masterPeriod: number | null = null,
 ) {
+  // Same date & period with another room = a room change for that day only.
+  const roomOnly = !!slot && !!roomId && slot.date === date && slot.period === masterPeriod;
   await tx
     .delete(scheduleExceptions)
     .where(and(eq(scheduleExceptions.versionId, versionId), eq(scheduleExceptions.itemId, itemId), eq(scheduleExceptions.exceptionDate, date)));
@@ -83,11 +88,11 @@ async function putException(
     issueId: null,
     itemId,
     exceptionDate: date,
-    action: slot ? 'makeup' : 'cancel',
+    action: roomOnly ? 'room_change' : slot ? 'makeup' : 'cancel',
     substituteStaffId: null,
-    newRoomId: null,
-    makeupDate: slot?.date ?? null,
-    makeupPeriod: slot?.period ?? null,
+    newRoomId: slot ? roomId : null,
+    makeupDate: roomOnly ? null : (slot?.date ?? null),
+    makeupPeriod: roomOnly ? null : (slot?.period ?? null),
   } as never);
 }
 
@@ -103,16 +108,23 @@ const deny = (res: Response, message: string) => res.status(403).json({ error: m
 const MANAGER_ONLY = 'เฉพาะผู้ดูแลระบบหรือผู้จัดตารางเท่านั้น — ครูโปรดส่งคำขอให้ผู้จัดตารางอนุมัติ';
 
 /** Move one dated class (or cancel it when `to` is null) after checking the target is free. */
-async function applyDatedMove(s: State, itemId: string, date: string, to: { date: string; period: number } | null, dryRun = false) {
+async function applyDatedMove(
+  s: State,
+  itemId: string,
+  date: string,
+  to: { date: string; period: number } | null,
+  roomId: string | null = null,
+  dryRun = false,
+) {
   const occ = occurrenceOf(s, itemId, date);
   if (!occ) throw new Error('ไม่พบคาบเรียนนี้ในวันที่ระบุ');
   if (occ.item.isLocked) throw new Error('คาบนี้ถูกล็อกไว้ ย้ายหรืองดไม่ได้');
   if (to) {
     const others = s.exceptions.filter((e) => !(e.itemId === itemId && e.exceptionDate === date));
-    const problem = datedPlacementProblem(s.ctx, others, occ, to.date, to.period);
+    const problem = datedPlacementProblem(s.ctx, others, occ, to.date, to.period, roomId);
     if (problem) throw new Error(problem);
   }
-  if (!dryRun) await db.transaction((tx) => putException(tx, s.versionId, itemId, date, to));
+  if (!dryRun) await db.transaction((tx) => putException(tx, s.versionId, itemId, date, to, roomId, occ.item.startPeriod));
 }
 
 /** Apply a same-week swap of two dated classes after checking both sides are free. */
@@ -132,14 +144,14 @@ async function applySwap(s: State, a: { itemId: string; date: string }, b: { ite
 }
 
 /** Apply a permanent move in the master timetable after re-checking it. */
-async function applyPermanentMove(s: State, itemId: string, day: number, period: number, dryRun = false) {
-  const move = planCellActions(s.ctx, itemId).moves.find((m) => m.day === day && m.period === period);
-  if (!move?.ok) throw new Error(move?.reason ?? 'ย้ายไม่ได้');
+async function applyPermanentMove(s: State, itemId: string, day: number, period: number, roomId: string | null = null, dryRun = false) {
+  const problem = placementProblem(s.ctx, itemId, day, period, roomId ?? undefined);
+  if (problem) throw new Error(problem);
   if (dryRun) return;
   await updateScheduleItemsAtomic({
     versionId: s.versionId,
     ctx: s.ctx,
-    changes: [{ itemId, patch: { dayOfWeek: day, startPeriod: period, status: 'scheduled' } }],
+    changes: [{ itemId, patch: { dayOfWeek: day, startPeriod: period, status: 'scheduled', ...(roomId ? { roomId } : {}) } }],
   });
 }
 
@@ -176,16 +188,21 @@ export function registerWeeklyRoutes(router: Router, strParam: (v: string | stri
   // Move one dated class to another date/period (weekend allowed), or cancel it (owed until made up).
   router.post('/weekly/exceptions', async (req: Request, res: Response) => {
     const parsed = z
-      .object({ itemId: z.string().min(1), date: ISO, to: z.object({ date: ISO, period: z.number().int().min(1).max(12) }).nullable() })
+      .object({
+        itemId: z.string().min(1),
+        date: ISO,
+        to: z.object({ date: ISO, period: z.number().int().min(1).max(12) }).nullable(),
+        roomId: z.string().min(1).nullable().optional(),
+      })
       .safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'ข้อมูลไม่ถูกต้อง', issues: parsed.error.issues });
       return;
     }
     if (!isManager(req)) return void deny(res, MANAGER_ONLY);
-    const { itemId, date, to } = parsed.data;
+    const { itemId, date, to, roomId } = parsed.data;
     try {
-      await applyDatedMove(await loadWeekState(), itemId, date, to);
+      await applyDatedMove(await loadWeekState(), itemId, date, to, roomId ?? null);
       res.json({ ok: true });
     } catch (e) {
       fail(res, e);
@@ -260,18 +277,33 @@ export function registerWeeklyRoutes(router: Router, strParam: (v: string | stri
   const To = z.object({ date: ISO, period: z.number().int().min(1).max(12) });
   const RequestBody = z
     .discriminatedUnion('kind', [
-      z.object({ kind: z.literal('move_week'), itemId: z.string().min(1), date: ISO, to: To }),
+      z.object({ kind: z.literal('move_week'), itemId: z.string().min(1), date: ISO, to: To, roomId: z.string().min(1).nullable().optional() }),
       z.object({ kind: z.literal('cancel_week'), itemId: z.string().min(1), date: ISO }),
       z.object({ kind: z.literal('swap_week'), a: Dated, b: Dated }),
-      z.object({ kind: z.literal('move_permanent'), itemId: z.string().min(1), day: z.number().int().min(1).max(7), period: z.number().int().min(1).max(12) }),
+      z.object({
+        kind: z.literal('move_permanent'),
+        itemId: z.string().min(1),
+        day: z.number().int().min(1).max(7),
+        period: z.number().int().min(1).max(12),
+        roomId: z.string().min(1).nullable().optional(),
+      }),
     ])
     .and(z.object({ requestedBy: z.string().min(1).max(60), note: z.string().max(500).optional() }));
-  type Payload = { itemId?: string; date?: string; to?: { date: string; period: number }; a?: { itemId: string; date: string }; b?: { itemId: string; date: string }; day?: number; period?: number };
+  type Payload = {
+    itemId?: string;
+    date?: string;
+    to?: { date: string; period: number };
+    roomId?: string | null;
+    a?: { itemId: string; date: string };
+    b?: { itemId: string; date: string };
+    day?: number;
+    period?: number;
+  };
   const applyRequest = (s: State, kind: string, p: Payload, dryRun: boolean) => {
-    if (kind === 'move_week') return applyDatedMove(s, p.itemId!, p.date!, p.to!, dryRun);
-    if (kind === 'cancel_week') return applyDatedMove(s, p.itemId!, p.date!, null, dryRun);
+    if (kind === 'move_week') return applyDatedMove(s, p.itemId!, p.date!, p.to!, p.roomId ?? null, dryRun);
+    if (kind === 'cancel_week') return applyDatedMove(s, p.itemId!, p.date!, null, null, dryRun);
     if (kind === 'swap_week') return applySwap(s, p.a!, p.b!, dryRun);
-    return applyPermanentMove(s, p.itemId!, p.day!, p.period!, dryRun); // invalidates the cache itself
+    return applyPermanentMove(s, p.itemId!, p.day!, p.period!, p.roomId ?? null, dryRun); // invalidates the cache itself
   };
 
   router.post('/weekly/requests', async (req: Request, res: Response) => {
@@ -318,6 +350,41 @@ export function registerWeeklyRoutes(router: Router, strParam: (v: string | stri
         id,
       ]);
       res.json({ ok: true });
+    } catch (e) {
+      fail(res, e);
+    }
+  });
+
+  // Add a classroom or a shared space (hall / the college dome) so classes can be moved there.
+  router.post('/rooms', async (req: Request, res: Response) => {
+    if (!isManager(req)) return void deny(res, 'เฉพาะผู้ดูแลระบบหรือผู้จัดตารางเท่านั้นที่เพิ่มห้องได้');
+    const parsed = z
+      .object({ roomCode: z.string().trim().min(1).max(30), capacity: z.number().int().min(1).max(5000), shared: z.boolean() })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'ข้อมูลห้องไม่ถูกต้อง (ชื่อห้อง 1–30 ตัวอักษร, ความจุ 1–5000)' });
+      return;
+    }
+    const { roomCode, capacity, shared } = parsed.data;
+    try {
+      const { ctx } = await loadWeekState();
+      if (ctx.rooms.some((r) => r.roomCode === roomCode)) throw new Error(`มีห้อง "${roomCode}" อยู่แล้ว`);
+      const type = ctx.roomTypes.find((t) => t.code === (shared ? 'activity_yard' : 'theory')) ?? ctx.roomTypes[0];
+      const building = ctx.buildings[0];
+      if (!type || !building) throw new Error('ยังไม่มีข้อมูลอาคารหรือประเภทห้องในระบบ');
+      const id = randomUUID();
+      await db.insert(roomsTable).values({
+        id,
+        roomCode,
+        buildingId: building.id,
+        roomTypeId: type.id,
+        capacity,
+        allowMultiGroup: shared,
+        features: null,
+        unavailableSlots: null,
+      } as never);
+      invalidateWorkspaceCache();
+      res.json({ ok: true, id });
     } catch (e) {
       fail(res, e);
     }

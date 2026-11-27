@@ -59,6 +59,7 @@ export interface ItemChange {
   dayOfWeek: number | null;
   startPeriod: number | null;
   status: 'scheduled' | 'unplaced_tray';
+  roomId?: string | null;
 }
 
 export function getStoredToken(): string | null {
@@ -96,6 +97,7 @@ export interface ChangeRequest {
     itemId?: string;
     date?: string;
     to?: { date: string; period: number };
+    roomId?: string | null;
     day?: number;
     period?: number;
   };
@@ -108,10 +110,10 @@ export interface ChangeRequest {
 }
 /** A timetable change a teacher asks an admin / scheduler to approve. */
 export type RequestChange =
-  | { kind: 'move_week'; itemId: string; date: string; to: { date: string; period: number } }
+  | { kind: 'move_week'; itemId: string; date: string; to: { date: string; period: number }; roomId?: string | null }
   | { kind: 'cancel_week'; itemId: string; date: string }
   | { kind: 'swap_week'; a: Dated; b: Dated }
-  | { kind: 'move_permanent'; itemId: string; day: number; period: number };
+  | { kind: 'move_permanent'; itemId: string; day: number; period: number; roomId?: string | null };
 export interface WeeklyData {
   versionId: string;
   termStart: string;
@@ -377,8 +379,10 @@ export const api = {
       true,
     ),
   weeklyData: () => rawRequest<WeeklyData>('/api/weekly/data'),
-  setDatedSlot: (itemId: string, date: string, to: { date: string; period: number } | null) =>
-    mutateRequest<{ ok: true }>('/api/weekly/exceptions', { method: 'POST', body: JSON.stringify({ itemId, date, to }) }, true),
+  setDatedSlot: (itemId: string, date: string, to: { date: string; period: number } | null, roomId?: string | null) =>
+    mutateRequest<{ ok: true }>('/api/weekly/exceptions', { method: 'POST', body: JSON.stringify({ itemId, date, to, roomId }) }, true),
+  addRoom: (roomCode: string, capacity: number, shared: boolean) =>
+    mutateRequest<{ ok: true; id: string }>('/api/rooms', { method: 'POST', body: JSON.stringify({ roomCode, capacity, shared }) }),
   restoreDated: (itemId: string, date: string) =>
     mutateRequest<{ ok: true }>(
       `/api/weekly/exceptions?itemId=${encodeURIComponent(itemId)}&date=${date}`,
