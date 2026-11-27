@@ -26,6 +26,7 @@ import {
   accounts,
   auditLogs,
   challengeRules,
+  importJobs,
   issueReports,
   scheduleExceptions,
   scheduleVersions,
@@ -42,7 +43,7 @@ import {
 } from '../engine';
 import { verifyPassword } from '../lib/password';
 import { isPublicDemoMode, signAuthToken } from '../middleware/auth';
-import { exportTimetableCsv } from '../services/export/csv';
+import { exportCompetitionOutputCsv, exportTimetableCsv } from '../services/export/csv';
 import { exportTimetableExcel } from '../services/export/excel';
 import { exportTimetablePdf } from '../services/export/pdf';
 import type { ExportViewMode } from '../services/export/shared';
@@ -887,6 +888,14 @@ export function createApiRouter(): Router {
     const ws = await loadContextFromDb({ versionId });
     const vName = ws.activeVersion?.name ?? versionId;
 
+    if (format === 'output') {
+      const [job] = await db.select().from(importJobs).orderBy(desc(importJobs.createdAt)).limit(1);
+      const stats = job?.stats as { timeslotIds?: Record<string, string> } | null | undefined;
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="output.csv"');
+      res.send(exportCompetitionOutputCsv(ws.ctx, stats?.timeslotIds));
+      return;
+    }
     if (format === 'csv') {
       const buf = exportTimetableCsv(ws.ctx, { view, targetId });
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -908,7 +917,7 @@ export function createApiRouter(): Router {
       res.send(buf);
       return;
     }
-    res.status(400).json({ error: 'Unsupported export format (use csv, excel, or pdf)' });
+    res.status(400).json({ error: 'Unsupported export format (use output, csv, excel, or pdf)' });
   });
 
   router.get('/audit-logs', async (_req: Request, res: Response) => {

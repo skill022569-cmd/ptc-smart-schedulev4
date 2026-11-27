@@ -489,6 +489,7 @@ function parseTimeslots(table: CsvTable, columns: Columns<'timeslot'>, issues: D
     if (r.broken) continue;
     rows.push({
       rowNo: r.line,
+      slotId: r.text('slotId'),
       day,
       period,
       startTime: startTime ?? '',
@@ -648,7 +649,9 @@ function parseRooms(table: CsvTable, columns: Columns<'room'>, issues: DataCheck
   for (const record of table.records) {
     const r = new RowReader('room', record, columns, issues);
     const roomCode = r.text('roomCode', true);
-    const capacity = r.int('capacity', { required: true, min: 1, max: 5000 });
+    // Official room.csv has only room_id,room_name: 0 = unknown, filled in parseDataset7.
+    const capacity =
+      columns.capacity === undefined ? 0 : r.int('capacity', { required: true, min: 1, max: 5000 });
     if (r.broken) continue;
     const typeRaw = r.raw('roomType');
     rows.push({
@@ -692,14 +695,20 @@ export function parseDataset7(files: Dataset7Files, columnMapping?: Dataset7Colu
   const teach = prepare('teach', pickFile(files, 'teach'), mapping, issues);
   const room = prepare('room', pickFile(files, 'room'), mapping, issues);
 
+  const studentGroups = studentGroup ? parseStudentGroups(studentGroup.table, studentGroup.columns, issues) : [];
+  const rooms = room ? parseRooms(room.table, room.columns, issues) : [];
+  // Rooms without a capacity fit the largest group, so H04 never blocks a dataset that has no capacity data.
+  const largestGroup = studentGroups.reduce((m, g) => Math.max(m, g.studentCount), 1);
+  for (const rm of rooms) if (rm.capacity === 0) rm.capacity = largestGroup;
+
   return {
     timeslots: timeslot ? parseTimeslots(timeslot.table, timeslot.columns, issues) : [],
-    studentGroups: studentGroup ? parseStudentGroups(studentGroup.table, studentGroup.columns, issues) : [],
+    studentGroups,
     registers: register ? parseRegisters(register.table, register.columns, issues) : [],
     subjects: subject ? parseSubjects(subject.table, subject.columns, issues) : [],
     teachers: teacher ? parseTeachers(teacher.table, teacher.columns, issues) : [],
     teaches: teach ? parseTeaches(teach.table, teach.columns, issues) : [],
-    rooms: room ? parseRooms(room.table, room.columns, issues) : [],
+    rooms,
     presentFiles,
     parseIssues: issues,
   };

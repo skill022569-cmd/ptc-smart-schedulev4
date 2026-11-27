@@ -29,6 +29,7 @@ const DEPARTMENT_ALIASES = ['department_code', 'department', 'dept', 'รหั�
 
 export const DEFAULT_COLUMN_MAPPING: Dataset7ColumnMapping = {
   timeslot: {
+    slotId: ['timeslot_id', 'slot_id', 'time_slot_id', 'รหัสคาบเรียน', 'รหัสคาบ'],
     day: ['day', 'day_of_week', 'dow', 'weekday', 'วัน', 'วันที่สอน', 'วันในสัปดาห์'],
     period: ['period', 'period_no', 'slot', 'slot_no', 'คาบ', 'คาบที่', 'คาบเรียน'],
     startTime: ['start_time', 'start', 'time_start', 'from', 'time', 'เวลาเริ่ม', 'เริ่ม', 'เวลา'],
@@ -121,7 +122,7 @@ export const REQUIRED_FIELDS: { [F in Dataset7FileKey]: Dataset7FieldMap[F][] } 
   subject: ['subjectCode', 'theoryHours'],
   teacher: ['teacherCode'],
   teach: ['teacherCode', 'subjectCode'],
-  room: ['roomCode', 'capacity'],
+  room: ['roomCode'],
 };
 
 /** Thai labels for normalized fields (used in Data Check messages). */

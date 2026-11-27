@@ -579,6 +579,8 @@ export interface CsvRowMeta {
 
 /** `timeslot.csv` — one row per (day, period). */
 export interface TimeslotCsvRow extends CsvRowMeta {
+  /** `timeslot_id` from the file, echoed back in output.csv. */
+  slotId: string | null;
   day: number;
   period: number;
   startTime: string;
@@ -723,6 +725,8 @@ export interface ImportPreviewStats {
   totalWeeklyPeriods: number;
   /** Teaching (non-lunch/break) slots per week in timeslot.csv. */
   classSlotsPerWeek: number;
+  /** Set on commit: `${day}-${period}` -> original timeslot_id, used by output.csv. */
+  timeslotIds?: Record<string, string>;
 }
 
 export interface Dataset7ValidationResult {

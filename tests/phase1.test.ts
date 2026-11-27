@@ -472,7 +472,8 @@ describe('parseDataset7', () => {
     };
     const withoutOverride = parseDataset7(files);
     const missing = issuesOf(withoutOverride.parseIssues, 'MISSING_COLUMN');
-    expect(missing.map((i) => i.file).sort()).toEqual(['room', 'room', 'student_group', 'student_group']);
+    // room: only room_code is required (official room.csv has no capacity column)
+    expect(missing.map((i) => i.file).sort()).toEqual(['room', 'student_group', 'student_group']);
     expectThaiIssue(missing[0]);
 
     const overrides = {
