@@ -218,7 +218,7 @@ export function App() {
       case 'issues':
         return <IssueReportPage key={scopeKey} profile={profile} />;
       case 'staff':
-        return <StaffPage key={scopeKey} profile={profile} />;
+        return <StaffPage key={scopeKey} profile={profile} role={effectiveRole} />;
       case 'dashboard':
       default:
         return <DashboardPage key={scopeKey} profile={profile} onNavigate={navigate} />;

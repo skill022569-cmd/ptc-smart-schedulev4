@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search, Users } from 'lucide-react';
+import { ChevronRight, Search, Users } from 'lucide-react';
+import type { AccountRole } from '@ptc/shared';
+import { StaffProfilePanel } from '../components/StaffProfilePanel';
 import { PageSkeleton } from '../components/PageSkeleton';
 import { api } from '../lib/api';
 import type { ScheduleWorkspacePayload } from '../types/ui';
@@ -7,7 +9,8 @@ import type { ScheduleWorkspacePayload } from '../types/ui';
 const STAFF_TYPE_TH: Record<string, string> = { teacher: 'ครูผู้สอน', guest_lecturer: 'ครูพิเศษ', staff: 'บุคลากรสนับสนุน' };
 
 /** College staff directory with each person's weekly teaching load from the current timetable. */
-export function StaffPage({ profile }: { profile: string }) {
+export function StaffPage({ profile, role }: { profile: string; role: AccountRole }) {
+  const [openId, setOpenId] = useState<string | null>(null);
   const [data, setData] = useState<ScheduleWorkspacePayload | null>(() => api.getCachedScheduleLatest(profile));
   const [err, setErr] = useState('');
   const [q, setQ] = useState('');
@@ -44,7 +47,7 @@ export function StaffPage({ profile }: { profile: string }) {
           <Users className="h-6 w-6 text-indigo-700" /> รายชื่อบุคลากร
         </h1>
         <p className="mt-1 text-sm text-slate-500">
-          บุคลากรทั้งหมด {rows.length} คน ใน {depts.length} แผนกวิชา พร้อมจำนวนคาบสอนต่อสัปดาห์จากตารางเรียนปัจจุบัน
+          บุคลากรทั้งหมด {rows.length} คน ใน {depts.length} แผนกวิชา · คลิกที่รายชื่อเพื่อดูโปรไฟล์ ประวัติ และตารางสอน
         </p>
       </div>
 
@@ -84,9 +87,19 @@ export function StaffPage({ profile }: { profile: string }) {
               const max = s.maxWeeklyPeriods ?? 24;
               const pct = Math.min(100, Math.round((s.load / max) * 100));
               return (
-                <tr key={s.id} className="hover:bg-slate-50">
+                <tr
+                  key={s.id}
+                  onClick={() => setOpenId(s.id)}
+                  onKeyDown={(e) => e.key === 'Enter' && setOpenId(s.id)}
+                  tabIndex={0}
+                  className="cursor-pointer hover:bg-indigo-50/60 focus:bg-indigo-50"
+                >
                   <td className="px-4 py-2 font-mono text-xs text-slate-500">{s.employeeCode}</td>
-                  <td className="px-4 py-2 font-medium text-slate-900">{s.fullName}</td>
+                  <td className="px-4 py-2 font-medium text-indigo-800">
+                    <span className="inline-flex items-center gap-1">
+                      {s.fullName} <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+                    </span>
+                  </td>
                   <td className="px-4 py-2 text-slate-600">{s.dept}</td>
                   <td className="px-4 py-2 text-slate-600">{s.position ?? STAFF_TYPE_TH[s.staffType ?? 'teacher']}</td>
                   <td className="px-4 py-2">
@@ -112,6 +125,20 @@ export function StaffPage({ profile }: { profile: string }) {
           </tbody>
         </table>
       </div>
+
+      {openId &&
+        (() => {
+          const s = rows.find((r) => r.id === openId);
+          return s ? (
+            <StaffProfilePanel
+              staff={s}
+              deptName={s.dept}
+              ctx={data.context}
+              canEdit={role === 'admin' || role === 'scheduler' || role === 'teacher'}
+              onClose={() => setOpenId(null)}
+            />
+          ) : null;
+        })()}
     </div>
   );
 }

@@ -49,6 +49,7 @@ import { exportTimetablePdf } from '../services/export/pdf';
 import type { ExportViewMode } from '../services/export/shared';
 import { DEFAULT_COLUMN_MAPPING, parseDataset7, validateDataset7 } from '../services/import';
 import { saveScheduleVersionAtomic, updateScheduleItemsAtomic } from '../services/occupancy.service';
+import { getItemHistory, getStaffProfile, saveStaffProfile } from '../services/staff-profile.service';
 import {
   commitDataset7ToDb,
   evaluateWorkspaceCached,
@@ -931,6 +932,45 @@ export function createApiRouter(): Router {
       return;
     }
     res.status(400).json({ error: 'Unsupported export format (use output, csv, excel, or pdf)' });
+  });
+
+  // ---- Staff profiles (personal background) + timetable change history ------
+  router.get('/staff/:code/profile', async (req: Request, res: Response) => {
+    const code = strParam(req.params.code);
+    const ws = await loadContextFromDb({});
+    const staffRow = ws.ctx.staff.find((s) => s.employeeCode === code);
+    if (!staffRow) {
+      res.status(404).json({ error: 'ไม่พบบุคลากรรหัสนี้' });
+      return;
+    }
+    const itemIds = ws.ctx.itemTeachers.filter((t) => t.staffId === staffRow.id).map((t) => t.itemId);
+    const [profile, history] = await Promise.all([getStaffProfile(code), getItemHistory(itemIds)]);
+    res.json({ profile, history });
+  });
+
+  router.put('/staff/:code/profile', async (req: Request, res: Response) => {
+    const text = (max: number) => z.string().max(max).nullable().optional();
+    const parsed = z
+      .object({
+        nickname: text(50),
+        email: z.union([z.literal(''), z.string().email().max(120)]).nullable().optional(),
+        education: text(2000),
+        workHistory: text(2000),
+        expertise: text(1000),
+        bio: text(2000),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'ข้อมูลโปรไฟล์ไม่ถูกต้อง (ตรวจรูปแบบอีเมลและความยาวข้อความ)', issues: parsed.error.issues });
+      return;
+    }
+    const code = strParam(req.params.code);
+    const ws = await loadContextFromDb({});
+    if (!ws.ctx.staff.some((s) => s.employeeCode === code)) {
+      res.status(404).json({ error: 'ไม่พบบุคลากรรหัสนี้' });
+      return;
+    }
+    res.json({ profile: await saveStaffProfile(code, parsed.data) });
   });
 
   router.get('/audit-logs', async (_req: Request, res: Response) => {

@@ -51,7 +51,6 @@ function Card({
   state,
   hint,
   editable,
-  continued,
   onClick,
 }: {
   dragId: string;
@@ -62,7 +61,6 @@ function Card({
   state: 'selected' | 'swap' | 'blocked' | 'normal';
   hint?: string;
   editable: boolean;
-  continued?: boolean;
   onClick: () => void;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -96,16 +94,14 @@ function Card({
           onClick();
         }
       }}
-      className={`rounded-md border p-1.5 text-left text-[11px] leading-snug shadow-xs transition ${color} ${ring} ${
+      className={`relative flex min-h-16 flex-1 flex-col items-center justify-center rounded-md border px-2 py-1.5 text-center text-[11px] leading-snug shadow-xs transition ${color} ${ring} ${
         editable && !item.isLocked ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
-      } ${isDragging ? 'opacity-40' : ''} ${continued ? 'border-dashed' : ''}`}
+      } ${isDragging ? 'opacity-40' : ''}`}
     >
-      <div className="flex items-start justify-between gap-1 font-semibold text-slate-800">
-        <span className="line-clamp-2">{title}</span>
-        {item.isLocked && <Lock className="mt-0.5 h-3 w-3 shrink-0 text-gold-600" aria-label="ล็อกไว้" />}
-      </div>
+      {item.isLocked && <Lock className="absolute right-1 top-1 h-3 w-3 text-gold-600" aria-label="ล็อกไว้" />}
+      <div className="font-semibold text-slate-800">{title}</div>
       {lines.map((l) => (
-        <div key={l} className="truncate text-slate-500">
+        <div key={l} className="text-slate-500">
           {l}
         </div>
       ))}
@@ -115,12 +111,14 @@ function Card({
 
 function Cell({
   id,
+  span = 1,
   tone,
   hint,
   onClick,
   children,
 }: {
   id: string;
+  span?: number;
   tone: 'move' | 'blocked' | 'lunch' | 'none';
   hint?: string;
   onClick?: () => void;
@@ -138,11 +136,12 @@ function Cell({
   return (
     <td
       ref={setNodeRef}
+      colSpan={span}
       title={hint}
       onClick={onClick}
       className={`h-20 min-w-32 border border-slate-200 p-1 align-top transition ${bg} ${isOver ? 'ring-2 ring-inset ring-indigo-500' : ''}`}
     >
-      <div className="space-y-1">
+      <div className="flex h-full flex-col gap-1">
         {children}
         {tone === 'move' && !children && <div className="pt-5 text-center text-[11px] font-semibold text-emerald-700">ย้ายมาที่นี่</div>}
       </div>
@@ -249,6 +248,24 @@ export function WorkspacePage({ profile, role }: { profile: string; role: Accoun
     day && p ? `${DAY_NAMES_TH[day]} คาบ ${p}${d > 1 ? `–${p + d - 1}` : ''}` : 'ถาดรอจัด';
 
   const placed = ctx.items.filter((i) => i.status === 'scheduled' && i.dayOfWeek != null && i.startPeriod != null && inView(i));
+  /**
+   * One table cell per class block: a class lasting several periods gets one merged cell, unless another
+   * class in this view starts inside it (then it is cut at that period so nothing is hidden).
+   */
+  const blocksOf = (day: number) => {
+    const ps = periods.map((t) => t.period);
+    const onDay = placed.filter((i) => i.dayOfWeek === day);
+    const blocks: Array<{ period: number; span: number; here: ScheduleItem[] }> = [];
+    for (let k = 0; k < ps.length; ) {
+      const period = ps[k]!;
+      const want = Math.max(1, ...onDay.filter((i) => i.startPeriod === period).map((i) => i.duration));
+      let span = 1;
+      while (span < want && ps[k + span] === period + span && !onDay.some((i) => i.startPeriod === period + span)) span++;
+      blocks.push({ period, span, here: onDay.filter((i) => i.startPeriod! <= period && period < i.startPeriod! + i.duration) });
+      k += span;
+    }
+    return blocks;
+  };
   const tray = ctx.items.filter((i) => i.status === 'unplaced_tray');
   const trayHere = tray.filter(inView);
   const days = [...new Set(ctx.timeSlots.flatMap((t) => t.openDays ?? []))].sort((a, b) => a - b);
@@ -511,14 +528,14 @@ export function WorkspacePage({ profile, role }: { profile: string; role: Accoun
                     <th className="sticky left-0 z-10 border border-slate-200 bg-slate-50 px-3 text-left font-bold text-slate-700">
                       {DAY_NAMES_TH[day]}
                     </th>
-                    {periods.map(({ period }) => {
-                      const here = placed.filter((i) => i.dayOfWeek === day && period >= i.startPeriod! && period < i.startPeriod! + i.duration);
+                    {blocksOf(day).map(({ period, span, here }) => {
                       const m = moveAt.get(`${day}:${period}`);
-                      const tone = canEdit && selected && m ? (m.ok ? 'move' : 'blocked') : period === lunch ? 'lunch' : 'none';
+                      const tone = canEdit && selected && m ? (m.ok ? 'move' : 'blocked') : span === 1 && period === lunch ? 'lunch' : 'none';
                       return (
                         <Cell
                           key={period}
                           id={`cell:${day}:${period}`}
+                          span={span}
                           tone={tone}
                           hint={m && !m.ok ? m.reason : undefined}
                           onClick={canEdit && selected && m?.ok ? () => moveTo(selected, day, period) : undefined}
@@ -532,12 +549,11 @@ export function WorkspacePage({ profile, role }: { profile: string; role: Accoun
                                 dragId={`${i.id}@${day}:${period}`}
                                 item={i}
                                 title={`${subj?.subjectCode ?? ''} ${subj?.subjectName ?? ''}`}
-                                lines={period === i.startPeriod ? linesOf(i) : ['(ต่อ)']}
+                                lines={linesOf(i)}
                                 color={colorOf(subj?.id ?? i.offeringId)}
                                 state={state}
                                 hint={hint}
                                 editable={canEdit}
-                                continued={period !== i.startPeriod}
                                 onClick={() => onCardClick(i)}
                               />
                             );

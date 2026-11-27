@@ -34,6 +34,25 @@ const responseCache = new Map<string, CacheEntry>();
 const inFlightGets = new Map<string, Promise<unknown>>();
 let cacheEpoch = 0;
 
+export interface StaffProfile {
+  employeeCode: string;
+  nickname: string | null;
+  email: string | null;
+  education: string | null;
+  workHistory: string | null;
+  expertise: string | null;
+  bio: string | null;
+  updatedAt: string | null;
+}
+type SlotSnapshot = { dayOfWeek: number | null; startPeriod: number | null; status?: string; isLocked?: boolean } | null;
+export interface StaffHistoryEntry {
+  itemId: string;
+  action: string;
+  before: SlotSnapshot;
+  after: SlotSnapshot;
+  at: string | null;
+}
+
 /** One item's new position for the batch move endpoint (null day/period + unplaced_tray = put in the tray). */
 export interface ItemChange {
   itemId: string;
@@ -308,6 +327,14 @@ export const api = {
     mutateRequest<{ item: unknown; report: ScheduleWorkspacePayload['report']; qualitySummary: ScheduleWorkspacePayload['qualitySummary'] }>(
       `/api/schedule/${encodeURIComponent(versionId)}/items/${encodeURIComponent(itemId)}`,
       { method: 'PATCH', body: JSON.stringify(patch) },
+    ),
+  staffProfile: (employeeCode: string) =>
+    rawRequest<{ profile: StaffProfile | null; history: StaffHistoryEntry[] }>(`/api/staff/${encodeURIComponent(employeeCode)}/profile`),
+  saveStaffProfile: (employeeCode: string, profile: Omit<StaffProfile, 'employeeCode' | 'updatedAt'>) =>
+    mutateRequest<{ profile: StaffProfile }>(
+      `/api/staff/${encodeURIComponent(employeeCode)}/profile`,
+      { method: 'PUT', body: JSON.stringify(profile) },
+      true,
     ),
   moveItems: (versionId: string, changes: ItemChange[]) =>
     mutateRequest<{ items: unknown[] }>(
