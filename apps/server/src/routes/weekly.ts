@@ -96,8 +96,27 @@ const fail = (res: Response, e: unknown) => {
   res.status(status).json({ error: e instanceof Error ? e.message : String(e) });
 };
 
+/** Only admin / scheduler change the timetable directly; teachers send requests they approve. */
+const MANAGERS = ['admin', 'scheduler'];
+const isManager = (req: Request) => MANAGERS.includes(req.user?.role ?? '');
+const deny = (res: Response, message: string) => res.status(403).json({ error: message });
+const MANAGER_ONLY = 'เฉพาะผู้ดูแลระบบหรือผู้จัดตารางเท่านั้น — ครูโปรดส่งคำขอให้ผู้จัดตารางอนุมัติ';
+
+/** Move one dated class (or cancel it when `to` is null) after checking the target is free. */
+async function applyDatedMove(s: State, itemId: string, date: string, to: { date: string; period: number } | null, dryRun = false) {
+  const occ = occurrenceOf(s, itemId, date);
+  if (!occ) throw new Error('ไม่พบคาบเรียนนี้ในวันที่ระบุ');
+  if (occ.item.isLocked) throw new Error('คาบนี้ถูกล็อกไว้ ย้ายหรืองดไม่ได้');
+  if (to) {
+    const others = s.exceptions.filter((e) => !(e.itemId === itemId && e.exceptionDate === date));
+    const problem = datedPlacementProblem(s.ctx, others, occ, to.date, to.period);
+    if (problem) throw new Error(problem);
+  }
+  if (!dryRun) await db.transaction((tx) => putException(tx, s.versionId, itemId, date, to));
+}
+
 /** Apply a same-week swap of two dated classes after checking both sides are free. */
-async function applySwap(s: State, a: { itemId: string; date: string }, b: { itemId: string; date: string }) {
+async function applySwap(s: State, a: { itemId: string; date: string }, b: { itemId: string; date: string }, dryRun = false) {
   if (mondayOf(a.date) !== mondayOf(b.date)) throw new Error('สลับได้เฉพาะคาบในสัปดาห์เดียวกัน');
   const week = weekOccurrences(s.ctx.items, s.ctx.itemTeachers, s.exceptions, mondayOf(a.date));
   const oa = week.find((o) => o.id === `${a.itemId}@${a.date}`);
@@ -105,6 +124,7 @@ async function applySwap(s: State, a: { itemId: string; date: string }, b: { ite
   if (!oa?.date || !ob?.date || !oa.period || !ob.period) throw new Error('คาบที่จะสลับไม่ได้อยู่ในตารางสัปดาห์นี้แล้ว');
   const swap = planCellActions(weekPlanningContext(s.ctx, week), oa.id).swaps.find((x) => x.otherItemId === ob.id);
   if (!swap?.ok) throw new Error(swap?.reason ?? 'สลับไม่ได้');
+  if (dryRun) return;
   await db.transaction(async (tx) => {
     await putException(tx, s.versionId, a.itemId, a.date, { date: ob.date!, period: ob.period! });
     await putException(tx, s.versionId, b.itemId, b.date, { date: oa.date!, period: oa.period! });
@@ -112,9 +132,10 @@ async function applySwap(s: State, a: { itemId: string; date: string }, b: { ite
 }
 
 /** Apply a permanent move in the master timetable after re-checking it. */
-async function applyPermanentMove(s: State, itemId: string, day: number, period: number) {
+async function applyPermanentMove(s: State, itemId: string, day: number, period: number, dryRun = false) {
   const move = planCellActions(s.ctx, itemId).moves.find((m) => m.day === day && m.period === period);
   if (!move?.ok) throw new Error(move?.reason ?? 'ย้ายไม่ได้');
+  if (dryRun) return;
   await updateScheduleItemsAtomic({
     versionId: s.versionId,
     ctx: s.ctx,
@@ -161,18 +182,10 @@ export function registerWeeklyRoutes(router: Router, strParam: (v: string | stri
       res.status(400).json({ error: 'ข้อมูลไม่ถูกต้อง', issues: parsed.error.issues });
       return;
     }
+    if (!isManager(req)) return void deny(res, MANAGER_ONLY);
     const { itemId, date, to } = parsed.data;
     try {
-      const s = await loadWeekState();
-      const occ = occurrenceOf(s, itemId, date);
-      if (!occ) throw new Error('ไม่พบคาบเรียนนี้ในวันที่ระบุ');
-      if (occ.item.isLocked) throw new Error('คาบนี้ถูกล็อกไว้ ย้ายหรืองดไม่ได้');
-      if (to) {
-        const others = s.exceptions.filter((e) => !(e.itemId === itemId && e.exceptionDate === date));
-        const problem = datedPlacementProblem(s.ctx, others, occ, to.date, to.period);
-        if (problem) throw new Error(problem);
-      }
-      await db.transaction((tx) => putException(tx, s.versionId, itemId, date, to));
+      await applyDatedMove(await loadWeekState(), itemId, date, to);
       res.json({ ok: true });
     } catch (e) {
       fail(res, e);
@@ -181,6 +194,7 @@ export function registerWeeklyRoutes(router: Router, strParam: (v: string | stri
 
   // Back to the master timetable for that date.
   router.delete('/weekly/exceptions', async (req: Request, res: Response) => {
+    if (!isManager(req)) return void deny(res, MANAGER_ONLY);
     const itemId = strParam(req.query.itemId as string | undefined);
     const date = strParam(req.query.date as string | undefined);
     try {
@@ -226,6 +240,7 @@ export function registerWeeklyRoutes(router: Router, strParam: (v: string | stri
 
   const Dated = z.object({ itemId: z.string().min(1), date: ISO });
   router.post('/weekly/swap', async (req: Request, res: Response) => {
+    if (!isManager(req)) return void deny(res, MANAGER_ONLY);
     const parsed = z.object({ a: Dated, b: Dated }).safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'ข้อมูลไม่ถูกต้อง' });
@@ -239,39 +254,41 @@ export function registerWeeklyRoutes(router: Router, strParam: (v: string | stri
     }
   });
 
-  // Requests: a teacher asks a colleague to swap this week (peer accepts), or asks for a permanent move (admin approves).
+  // Requests: every timetable change a teacher wants (move / makeup / cancel / swap this week, or a
+  // permanent move) waits for an admin or scheduler. Checked now so nobody approves something impossible,
+  // and checked again on approval because the timetable may have changed meanwhile.
+  const To = z.object({ date: ISO, period: z.number().int().min(1).max(12) });
+  const RequestBody = z
+    .discriminatedUnion('kind', [
+      z.object({ kind: z.literal('move_week'), itemId: z.string().min(1), date: ISO, to: To }),
+      z.object({ kind: z.literal('cancel_week'), itemId: z.string().min(1), date: ISO }),
+      z.object({ kind: z.literal('swap_week'), a: Dated, b: Dated }),
+      z.object({ kind: z.literal('move_permanent'), itemId: z.string().min(1), day: z.number().int().min(1).max(7), period: z.number().int().min(1).max(12) }),
+    ])
+    .and(z.object({ requestedBy: z.string().min(1).max(60), note: z.string().max(500).optional() }));
+  type Payload = { itemId?: string; date?: string; to?: { date: string; period: number }; a?: { itemId: string; date: string }; b?: { itemId: string; date: string }; day?: number; period?: number };
+  const applyRequest = (s: State, kind: string, p: Payload, dryRun: boolean) => {
+    if (kind === 'move_week') return applyDatedMove(s, p.itemId!, p.date!, p.to!, dryRun);
+    if (kind === 'cancel_week') return applyDatedMove(s, p.itemId!, p.date!, null, dryRun);
+    if (kind === 'swap_week') return applySwap(s, p.a!, p.b!, dryRun);
+    return applyPermanentMove(s, p.itemId!, p.day!, p.period!, dryRun); // invalidates the cache itself
+  };
+
   router.post('/weekly/requests', async (req: Request, res: Response) => {
-    const parsed = z
-      .discriminatedUnion('kind', [
-        z.object({ kind: z.literal('swap_week'), a: Dated, b: Dated, peerCode: z.string().min(1).max(20) }),
-        z.object({ kind: z.literal('move_permanent'), itemId: z.string().min(1), day: z.number().int().min(1).max(7), period: z.number().int().min(1).max(12) }),
-      ])
-      .and(z.object({ requestedBy: z.string().min(1).max(60), note: z.string().max(500).optional() }))
-      .safeParse(req.body);
+    if (!['admin', 'scheduler', 'teacher'].includes(req.user?.role ?? '')) return void deny(res, 'บัญชีนี้ส่งคำขอปรับตารางไม่ได้');
+    const parsed = RequestBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'ข้อมูลคำขอไม่ถูกต้อง', issues: parsed.error.issues });
       return;
     }
-    const d = parsed.data;
+    const { kind, requestedBy, note, ...payload } = parsed.data;
     try {
       await ensureTables();
-      const s = await loadWeekState();
-      // Check now so nobody is asked to approve something impossible.
-      if (d.kind === 'swap_week') {
-        const week = weekOccurrences(s.ctx.items, s.ctx.itemTeachers, s.exceptions, mondayOf(d.a.date));
-        const sw = planCellActions(weekPlanningContext(s.ctx, week), `${d.a.itemId}@${d.a.date}`).swaps.find(
-          (x) => x.otherItemId === `${d.b.itemId}@${d.b.date}`,
-        );
-        if (!sw?.ok) throw new Error(sw?.reason ?? 'สลับไม่ได้');
-      } else {
-        const mv = planCellActions(s.ctx, d.itemId).moves.find((m) => m.day === d.day && m.period === d.period);
-        if (!mv?.ok) throw new Error(mv?.reason ?? 'ย้ายไม่ได้');
-      }
-      const { kind, requestedBy, note, ...payload } = d;
+      await applyRequest(await loadWeekState(), kind, payload, true);
       const id = randomUUID();
       await pool.query(
-        'INSERT INTO change_requests (id, kind, status, payload, requested_by, peer_code, note) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [id, kind, kind === 'swap_week' ? 'pending_peer' : 'pending_admin', JSON.stringify(payload), requestedBy, d.kind === 'swap_week' ? d.peerCode : null, note ?? null],
+        'INSERT INTO change_requests (id, kind, status, payload, requested_by, peer_code, note) VALUES (?, ?, ?, ?, ?, NULL, ?)',
+        [id, kind, 'pending_admin', JSON.stringify(payload), requestedBy, note ?? null],
       );
       res.json({ ok: true, id });
     } catch (e) {
@@ -280,6 +297,7 @@ export function registerWeeklyRoutes(router: Router, strParam: (v: string | stri
   });
 
   router.post('/weekly/requests/:id/decide', async (req: Request, res: Response) => {
+    if (!isManager(req)) return void deny(res, 'เฉพาะผู้ดูแลระบบหรือผู้จัดตารางเท่านั้นที่อนุมัติคำขอได้');
     const parsed = z.object({ accept: z.boolean(), by: z.string().min(1).max(60) }).safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'ข้อมูลไม่ถูกต้อง' });
@@ -291,13 +309,9 @@ export function registerWeeklyRoutes(router: Router, strParam: (v: string | stri
       const [rows] = await pool.query<RowDataPacket[]>('SELECT * FROM change_requests WHERE id = ?', [id]);
       const r = rows[0];
       if (!r) throw Object.assign(new Error('ไม่พบคำขอ'), { status: 404 });
-      if (r.status !== 'pending_peer' && r.status !== 'pending_admin') throw new Error('คำขอนี้ถูกตัดสินแล้ว');
+      if (!String(r.status).startsWith('pending')) throw new Error('คำขอนี้ถูกตัดสินแล้ว');
       const payload = typeof r.payload === 'string' ? JSON.parse(r.payload) : r.payload;
-      if (parsed.data.accept) {
-        const s = await loadWeekState();
-        if (r.kind === 'swap_week') await applySwap(s, payload.a, payload.b);
-        else await applyPermanentMove(s, payload.itemId, payload.day, payload.period); // invalidates the cache itself
-      }
+      if (parsed.data.accept) await applyRequest(await loadWeekState(), String(r.kind), payload, false);
       await pool.query('UPDATE change_requests SET status = ?, decided_by = ?, decided_at = CURRENT_TIMESTAMP WHERE id = ?', [
         parsed.data.accept ? 'approved' : 'rejected',
         parsed.data.by,
@@ -311,6 +325,7 @@ export function registerWeeklyRoutes(router: Router, strParam: (v: string | stri
 
   // Weekly lesson units of one subject (shared by every group taking it).
   router.put('/weekly/lesson-plans/:subjectCode', async (req: Request, res: Response) => {
+    if (!['admin', 'scheduler', 'teacher'].includes(req.user?.role ?? '')) return void deny(res, 'บัญชีนี้แก้แผนการสอนไม่ได้');
     const parsed = z
       .object({ weeks: z.array(z.object({ weekNo: z.number().int().min(1).max(40), unit: z.string().max(300) })).max(40) })
       .safeParse(req.body);

@@ -49,7 +49,7 @@ interface NavItem {
 /** Menus each role sees; admin and scheduler see everything. */
 const ROLE_MENUS: Partial<Record<AccountRole, string[]>> = {
   teacher: ['dashboard', 'weekly', 'workspace', 'views', 'staff', 'issues'],
-  student: ['dashboard', 'weekly', 'workspace', 'views'],
+  student: ['weekly'],
   viewer: ['dashboard', 'weekly', 'views', 'staff'],
 };
 
@@ -197,7 +197,7 @@ export function App() {
   const effectiveRole: AccountRole = hasJwt && session?.user && !session.user.isPublicGuest ? session.user.role : role;
   const allowedMenus = ROLE_MENUS[effectiveRole];
   const canSee = (id: string) => !allowedMenus || allowedMenus.includes(id);
-  const page = canSee(activeTab) ? activeTab : 'dashboard';
+  const page = canSee(activeTab) ? activeTab : (allowedMenus?.[0] ?? 'dashboard');
   const jwtStaffId = hasJwt && session?.user && !session.user.isPublicGuest ? session.user.staffId : null;
 
   // Requests waiting for this user (badge on the weekly menu).
@@ -209,11 +209,8 @@ export function App() {
       .then(async (w) => {
         let myCode = getDemoStaff();
         if (jwtStaffId) myCode = (await api.scheduleLatest(profile)).context.staff.find((st) => st.id === jwtStaffId)?.employeeCode ?? '';
-        setPending(
-          w.requests.filter(
-            (r) => (r.status === 'pending_peer' && (admin || (myCode && r.peerCode === myCode))) || (r.status === 'pending_admin' && admin),
-          ).length,
-        );
+        // Managers: requests to approve. Teachers: their own requests still waiting.
+        setPending(w.requests.filter((r) => r.status.startsWith('pending') && (admin || (!!myCode && r.requestedBy === myCode))).length);
       })
       .catch(() => setPending(0));
   };

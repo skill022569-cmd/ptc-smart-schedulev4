@@ -88,9 +88,17 @@ export const setDemoStaff = (code: string) => localStorage.setItem(DEMO_STAFF_KE
 export type Dated = { itemId: string; date: string };
 export interface ChangeRequest {
   id: string;
-  kind: 'swap_week' | 'move_permanent';
+  kind: 'move_week' | 'cancel_week' | 'swap_week' | 'move_permanent';
   status: 'pending_peer' | 'pending_admin' | 'approved' | 'rejected';
-  payload: { a?: Dated; b?: Dated; itemId?: string; day?: number; period?: number };
+  payload: {
+    a?: Dated;
+    b?: Dated;
+    itemId?: string;
+    date?: string;
+    to?: { date: string; period: number };
+    day?: number;
+    period?: number;
+  };
   requestedBy: string;
   peerCode: string | null;
   note: string | null;
@@ -98,6 +106,12 @@ export interface ChangeRequest {
   createdAt: string | null;
   decidedAt: string | null;
 }
+/** A timetable change a teacher asks an admin / scheduler to approve. */
+export type RequestChange =
+  | { kind: 'move_week'; itemId: string; date: string; to: { date: string; period: number } }
+  | { kind: 'cancel_week'; itemId: string; date: string }
+  | { kind: 'swap_week'; a: Dated; b: Dated }
+  | { kind: 'move_permanent'; itemId: string; day: number; period: number };
 export interface WeeklyData {
   versionId: string;
   termStart: string;
@@ -374,9 +388,7 @@ export const api = {
   swapDated: (a: Dated, b: Dated) =>
     mutateRequest<{ ok: true }>('/api/weekly/swap', { method: 'POST', body: JSON.stringify({ a, b }) }, true),
   createRequest: (
-    body:
-      | { kind: 'swap_week'; a: Dated; b: Dated; peerCode: string; requestedBy: string; note?: string }
-      | { kind: 'move_permanent'; itemId: string; day: number; period: number; requestedBy: string; note?: string },
+    body: RequestChange & { requestedBy: string; note?: string },
   ) => mutateRequest<{ ok: true; id: string }>('/api/weekly/requests', { method: 'POST', body: JSON.stringify(body) }, true),
   decideRequest: (id: string, accept: boolean, by: string) =>
     mutateRequest<{ ok: true }>(`/api/weekly/requests/${encodeURIComponent(id)}/decide`, { method: 'POST', body: JSON.stringify({ accept, by }) }),

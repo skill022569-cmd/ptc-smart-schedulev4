@@ -16,7 +16,7 @@ import {
   type ScheduleException,
 } from '@ptc/shared';
 import { PageSkeleton } from '../components/PageSkeleton';
-import { api, getDemoStaff, setDemoStaff, type ChangeRequest, type WeeklyData } from '../lib/api';
+import { api, getDemoStaff, setDemoStaff, type ChangeRequest, type RequestChange, type WeeklyData } from '../lib/api';
 import type { ScheduleWorkspacePayload } from '../types/ui';
 
 type View = 'group' | 'teacher' | 'room';
@@ -46,6 +46,7 @@ export function WeeklyPage({
   onRequestsChanged: () => void;
 }) {
   const isAdmin = role === 'admin' || role === 'scheduler';
+  const isStudent = role === 'student';
   const [data, setData] = useState<ScheduleWorkspacePayload | null>(() => api.getCachedScheduleLatest(profile));
   const [weekly, setWeekly] = useState<WeeklyData | null>(null);
   const [exceptions, setExceptions] = useState<ScheduleException[]>([]);
@@ -174,15 +175,19 @@ export function WeeklyPage({
     await loadWeekly();
     onRequestsChanged();
   };
+  const ask = (label: string, change: RequestChange) =>
+    void run(`ส่งคำขอ${label}ถึงผู้จัดตารางแล้ว — รออนุมัติ`, () => api.createRequest({ ...change, requestedBy: actor }));
   const moveTo = (o: Occurrence, date: string, period: number) => {
-    localSet(o, { date, period });
     const what = `${subjectOf(o)?.subjectCode ?? ''} (${groupsText(o)})`;
+    if (!isAdmin) return ask(`${o.date ? 'ย้าย' : 'ลงชดเชย'} ${what} → ${slotText(date, period)} `, { kind: 'move_week', itemId: o.item.id, date: o.originalDate, to: { date, period } });
+    localSet(o, { date, period });
     void run(
       o.kind === 'away' || !o.date ? `ลงสอนชดเชย ${what} ใน ${slotText(date, period)}` : `ย้าย ${what} เฉพาะสัปดาห์นี้ → ${slotText(date, period)}`,
       () => api.setDatedSlot(o.item.id, o.originalDate, { date, period }),
     );
   };
   const cancel = (o: Occurrence) => {
+    if (!isAdmin) return ask(`งดสอน ${subjectOf(o)?.subjectCode ?? ''} ${slotText(o.date, o.period)} `, { kind: 'cancel_week', itemId: o.item.id, date: o.originalDate });
     localSet(o, null);
     void run(`งดสอน ${subjectOf(o)?.subjectCode ?? ''} ${slotText(o.date, o.period)} → บันทึกเป็นคาบค้างสอน`, () =>
       api.setDatedSlot(o.item.id, o.originalDate, null),
@@ -193,19 +198,13 @@ export function WeeklyPage({
     void run(`คืน ${subjectOf(o)?.subjectCode ?? ''} กลับตามตารางหลัก`, () => api.restoreDated(o.item.id, o.originalDate));
   };
   const swap = (a: Occurrence, b: Occurrence) => {
-    const peer = b.teacherIds.map((t) => maps.staff.get(t)).find(Boolean);
-    const direct = isAdmin || (me && b.teacherIds.includes(me.id));
     const A = { itemId: a.item.id, date: a.originalDate };
     const B = { itemId: b.item.id, date: b.originalDate };
-    if (direct) {
-      localSet(a, { date: b.date!, period: b.period! });
-      localSet(b, { date: a.date!, period: a.period! });
-      void run(`สลับ ${subjectOf(a)?.subjectCode} ⇄ ${subjectOf(b)?.subjectCode} เฉพาะสัปดาห์นี้`, () => api.swapDated(A, B));
-    } else if (peer) {
-      void run(`ส่งคำขอสลับคาบถึง ${peer.fullName} แล้ว — รอครูท่านนั้นกดยอมรับ`, () =>
-        api.createRequest({ kind: 'swap_week', a: A, b: B, peerCode: peer.employeeCode, requestedBy: actor }),
-      );
-    }
+    const text = `สลับ ${subjectOf(a)?.subjectCode} ⇄ ${subjectOf(b)?.subjectCode} เฉพาะสัปดาห์นี้`;
+    if (!isAdmin) return ask(`${text} `, { kind: 'swap_week', a: A, b: B });
+    localSet(a, { date: b.date!, period: b.period! });
+    localSet(b, { date: a.date!, period: a.period! });
+    void run(text, () => api.swapDated(A, B));
   };
   const permanent = (o: Occurrence, day: number, period: number) => {
     const text = `${subjectOf(o)?.subjectCode} → ${DAY_NAMES_TH[day]} คาบ ${period} (ทุกสัปดาห์)`;
@@ -215,11 +214,7 @@ export function WeeklyPage({
           api.scheduleLatest(profile, true).then(setData),
         ),
       );
-    } else {
-      void run(`ส่งคำขอย้ายถาวร ${text} ถึงผู้จัดตารางแล้ว`, () =>
-        api.createRequest({ kind: 'move_permanent', itemId: o.item.id, day, period, requestedBy: actor }),
-      );
-    }
+    } else ask(`ย้ายถาวร ${text} `, { kind: 'move_permanent', itemId: o.item.id, day, period });
   };
   const saveUnit = (o: Occurrence, unit: string) => {
     const code = subjectOf(o)?.subjectCode;
@@ -239,17 +234,25 @@ export function WeeklyPage({
       return s && d ? `${s.subjectCode} ${s.subjectName} (${DAY_SHORT[dayOfWeekOf(d.date)]} ${thDate(d.date)})` : 'คาบเรียน';
     };
     if (r.kind === 'swap_week') return `สลับ ${occOf(r.payload.a)} ⇄ ${occOf(r.payload.b)}`;
+    const dated = r.payload.itemId && r.payload.date ? { itemId: r.payload.itemId, date: r.payload.date } : undefined;
+    if (r.kind === 'cancel_week') return `งดสอน ${occOf(dated)}`;
+    if (r.kind === 'move_week') return `ย้าย ${occOf(dated)} → ${slotText(r.payload.to?.date ?? null, r.payload.to?.period ?? null)}`;
     const it = ctx.items.find((i) => i.id === r.payload.itemId);
     const s = it && maps.subj.get(maps.off.get(it.offeringId)?.subjectId ?? '');
     return `ย้ายถาวร ${s?.subjectCode ?? ''} ${s?.subjectName ?? ''} → ${DAY_NAMES_TH[r.payload.day ?? 1]} คาบ ${r.payload.period}`;
   };
   const nameOf = (code: string | null) => ctx.staff.find((s) => s.employeeCode === code)?.fullName ?? code ?? '';
-  const forMe = weekly.requests.filter(
-    (r) => (r.status === 'pending_peer' && (isAdmin || r.peerCode === me?.employeeCode)) || (r.status === 'pending_admin' && isAdmin),
+  const forMe = isAdmin ? weekly.requests.filter((r) => r.status.startsWith('pending')) : [];
+  const pendingKeys = new Set(
+    weekly.requests
+      .filter((r) => r.status.startsWith('pending'))
+      .flatMap((r) => [r.payload.a, r.payload.b, r.payload.itemId && r.payload.date ? { itemId: r.payload.itemId, date: r.payload.date } : undefined])
+      .filter((d): d is { itemId: string; date: string } => !!d)
+      .map((d) => `${d.itemId}@${d.date}`),
   );
   const mine = weekly.requests.filter((r) => me && r.requestedBy === me.employeeCode).slice(0, 8);
   const STATUS: Record<ChangeRequest['status'], string> = {
-    pending_peer: 'รอครูอีกฝ่ายยอมรับ',
+    pending_peer: 'รอผู้จัดตารางอนุมัติ',
     pending_admin: 'รอผู้จัดตารางอนุมัติ',
     approved: 'อนุมัติแล้ว ✓',
     rejected: 'ไม่อนุมัติ',
@@ -282,6 +285,7 @@ export function WeeklyPage({
     else moveTo(o, addDays(weekStart, day - 1), period);
   };
   const clickCard = (o: Occurrence) => {
+    if (isStudent) return;
     setErr('');
     const s = selected && swapWith.get(o.id);
     if (selected && s && canAct(selected)) {
@@ -306,7 +310,11 @@ export function WeeklyPage({
         <div>
           <h1 className="text-2xl font-bold text-slate-900">ตารางเรียนรายสัปดาห์ & สอนชดเชย</h1>
           <p className="mt-1 max-w-3xl text-sm text-slate-500">
-            ปรับได้อิสระเฉพาะสัปดาห์ โดยตารางหลักไม่เปลี่ยน · งดสอนแล้วระบบจะนับเป็นคาบค้างสอนจนกว่าจะลงชดเชย (เสาร์–อาทิตย์ได้) · สลับกับครูท่านอื่นต้องให้ท่านนั้นยอมรับก่อน
+            {role === 'student'
+              ? 'ตารางเรียนของกลุ่มเรียนตามวันที่จริง รวมคาบที่ย้ายหรือสอนชดเชยในสัปดาห์นั้น'
+              : isAdmin
+                ? 'ปรับได้อิสระเฉพาะสัปดาห์ โดยตารางหลักไม่เปลี่ยน · งดสอนแล้วนับเป็นคาบค้างจนกว่าจะลงชดเชย (เสาร์–อาทิตย์ได้) · อนุมัติคำขอของครูได้ทางขวามือ'
+                : 'ครูเลือกคาบของตนเพื่อขอย้าย ขอสลับ ของดสอน หรือขอลงชดเชย (เสาร์–อาทิตย์ได้) — ทุกคำขอต้องให้ผู้ดูแลระบบหรือผู้จัดตารางอนุมัติก่อน'}
           </p>
         </div>
         <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1">
@@ -329,7 +337,7 @@ export function WeeklyPage({
       </div>
 
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-2">
-        <div className="flex rounded-lg bg-slate-100 p-1">
+        <div className={`flex rounded-lg bg-slate-100 p-1 ${isStudent ? 'hidden' : ''}`}>
           {(
             [
               ['group', 'ตามกลุ่มเรียน'],
@@ -385,7 +393,7 @@ export function WeeklyPage({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_21rem]">
+      <div className={`grid grid-cols-1 gap-4 ${isStudent ? '' : 'xl:grid-cols-[1fr_21rem]'}`}>
         <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
           <table className="w-full border-collapse text-xs">
             <thead>
@@ -448,6 +456,7 @@ export function WeeklyPage({
                                   className={`flex min-h-14 flex-1 flex-col items-center justify-center rounded-md border px-2 py-1 text-center text-[11px] leading-snug ${colorOf(s?.id ?? o.item.offeringId)} ${ring}`}
                                 >
                                   {badge && <span className={`mb-0.5 rounded px-1.5 text-[10px] font-semibold ${badge.cls}`}>{badge.text}</span>}
+                                  {pendingKeys.has(o.id) && <span className="mb-0.5 rounded bg-indigo-100 px-1.5 text-[10px] font-semibold text-indigo-800">⏳ รออนุมัติ</span>}
                                   <span className="font-semibold text-slate-800">
                                     {s?.subjectCode} {s?.subjectName}
                                   </span>
@@ -470,7 +479,7 @@ export function WeeklyPage({
           </table>
         </div>
 
-        <aside className="space-y-4">
+        <aside className={`space-y-4 ${isStudent ? 'hidden' : ''}`}>
           {selected && (
             <section className="rounded-xl border-2 border-indigo-200 bg-white p-4">
               <div className="flex items-start justify-between gap-2">
@@ -532,14 +541,14 @@ export function WeeklyPage({
               ) : (
                 <>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {selected.exception && (
+                    {selected.exception && isAdmin && (
                       <button type="button" onClick={() => restore(selected)} className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium hover:bg-slate-50">
                         <RotateCcw className="h-3.5 w-3.5" /> คืนตามตารางหลัก
                       </button>
                     )}
                     {!selected.item.isLocked && (
                       <button type="button" onClick={() => cancel(selected)} className="inline-flex items-center gap-1 rounded-md border border-rose-300 px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50">
-                        <XCircle className="h-3.5 w-3.5" /> งดสอน (ครูไม่ว่าง) → คาบค้าง
+                        <XCircle className="h-3.5 w-3.5" /> {isAdmin ? 'งดสอน (ครูไม่ว่าง) → คาบค้าง' : 'ของดสอน (ครูไม่ว่าง)'}
                       </button>
                     )}
                     <button type="button" onClick={() => setShowPermanent(!showPermanent)} className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium hover:bg-slate-50">
@@ -564,7 +573,7 @@ export function WeeklyPage({
                   )}
 
                   <h3 className="mt-4 flex items-center gap-1.5 text-sm font-bold text-emerald-800">
-                    <MoveRight className="h-4 w-4" /> ย้ายเฉพาะสัปดาห์นี้ ({okMoves.length})
+                    <MoveRight className="h-4 w-4" /> {isAdmin ? 'ย้ายเฉพาะสัปดาห์นี้' : 'ขอย้ายเฉพาะสัปดาห์นี้'} ({okMoves.length})
                   </h3>
                   <div className="mt-1.5 flex max-h-28 flex-wrap gap-1.5 overflow-y-auto">
                     {okMoves.length === 0 && <span className="text-xs text-slate-500">ไม่มีช่องที่ครู กลุ่ม และห้องว่างพร้อมกัน</span>}
@@ -581,13 +590,13 @@ export function WeeklyPage({
                   </div>
 
                   <h3 className="mt-4 flex items-center gap-1.5 text-sm font-bold text-sky-800">
-                    <ArrowRightLeft className="h-4 w-4" /> สลับกับคาบอื่นในสัปดาห์นี้ ({okSwaps.length})
+                    <ArrowRightLeft className="h-4 w-4" /> {isAdmin ? 'สลับกับคาบอื่นในสัปดาห์นี้' : 'ขอสลับกับคาบอื่นในสัปดาห์นี้'} ({okSwaps.length})
                   </h3>
                   <div className="mt-1.5 max-h-40 space-y-1 overflow-y-auto">
                     {okSwaps.length === 0 && <span className="text-xs text-slate-500">ไม่มีคาบที่สลับกันได้ทั้งสองฝั่ง</span>}
                     {okSwaps.map((s) => {
                       const o = occs.find((x) => x.id === s.otherItemId)!;
-                      const needsPeer = !isAdmin && !(me && o.teacherIds.includes(me.id));
+                      const needsPeer = !isAdmin;
                       return (
                         <button key={s.otherItemId} type="button" onClick={() => swap(selected, o)} className="flex w-full items-center justify-between gap-2 rounded-md border border-sky-300 bg-sky-50 px-2 py-1.5 text-left text-xs hover:bg-sky-100">
                           <span>
@@ -605,9 +614,9 @@ export function WeeklyPage({
 
           <section className="rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="flex items-center gap-1.5 font-bold text-slate-900">
-              <Send className="h-4 w-4 text-indigo-700" /> คำขอที่รอคุณ ({forMe.length})
+              <Send className="h-4 w-4 text-indigo-700" /> {isAdmin ? `คำขอรออนุมัติ (${forMe.length})` : 'คำขอของฉัน'}
             </h2>
-            {forMe.length === 0 ? (
+            {!isAdmin ? null : forMe.length === 0 ? (
               <p className="mt-1 text-xs text-slate-400">ไม่มีคำขอรอดำเนินการ</p>
             ) : (
               <ul className="mt-2 space-y-2 text-xs">
@@ -619,7 +628,7 @@ export function WeeklyPage({
                     </div>
                     <div className="mt-1.5 flex gap-1.5">
                       <button type="button" onClick={() => decide(r, true)} className="rounded bg-emerald-600 px-2 py-1 font-semibold text-white hover:bg-emerald-700">
-                        {r.status === 'pending_peer' ? 'ยอมรับสลับ' : 'อนุมัติ'}
+                        อนุมัติ
                       </button>
                       <button type="button" onClick={() => decide(r, false)} className="rounded border border-slate-300 bg-white px-2 py-1 hover:bg-slate-50">
                         ปฏิเสธ
@@ -629,9 +638,10 @@ export function WeeklyPage({
                 ))}
               </ul>
             )}
+            {!isAdmin && mine.length === 0 && <p className="mt-1 text-xs text-slate-400">ยังไม่ได้ส่งคำขอ</p>}
             {mine.length > 0 && (
               <>
-                <h3 className="mt-3 text-xs font-semibold text-slate-600">คำขอที่ฉันส่ง</h3>
+                {isAdmin && <h3 className="mt-3 text-xs font-semibold text-slate-600">คำขอที่ฉันส่ง</h3>}
                 <ul className="mt-1 space-y-1 text-[11px] text-slate-600">
                   {mine.map((r) => (
                     <li key={r.id} className="rounded bg-slate-50 px-2 py-1">
@@ -671,11 +681,13 @@ export function WeeklyPage({
                           }}
                           className="rounded bg-indigo-700 px-2 py-0.5 font-semibold text-white hover:bg-indigo-800"
                         >
-                          {o.id === placingId ? 'ยกเลิก' : 'ลงชดเชย'}
+                          {o.id === placingId ? 'ยกเลิก' : isAdmin ? 'ลงชดเชย' : 'ขอลงชดเชย'}
                         </button>
-                        <button type="button" onClick={() => restore(o)} className="text-slate-500 underline">
-                          ยกเลิกการงดสอน
-                        </button>
+                        {isAdmin && (
+                          <button type="button" onClick={() => restore(o)} className="text-slate-500 underline">
+                            ยกเลิกการงดสอน
+                          </button>
+                        )}
                       </div>
                     )}
                   </li>

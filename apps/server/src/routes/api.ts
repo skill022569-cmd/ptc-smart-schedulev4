@@ -545,6 +545,10 @@ export function createApiRouter(): Router {
     versionId: string,
     changes: Array<{ itemId: string; patch: z.infer<typeof MoveItemSchema> }>,
   ) => {
+    if (!['admin', 'scheduler'].includes(req.user?.role ?? '')) {
+      res.status(403).json({ error: 'เฉพาะผู้ดูแลระบบหรือผู้จัดตารางเท่านั้น — ครูโปรดส่งคำขอในหน้าตารางรายสัปดาห์' });
+      return;
+    }
     const ws = await loadContextFromDb({ versionId });
     try {
       // No re-evaluation here: the editor updates optimistically; scores refresh on the next schedule load.
@@ -950,6 +954,10 @@ export function createApiRouter(): Router {
   });
 
   router.put('/staff/:code/profile', async (req: Request, res: Response) => {
+    if (!['admin', 'scheduler', 'teacher'].includes(req.user?.role ?? '')) {
+      res.status(403).json({ error: 'บัญชีนี้แก้ไขโปรไฟล์ไม่ได้' });
+      return;
+    }
     const text = (max: number) => z.string().max(max).nullable().optional();
     const parsed = z
       .object({
