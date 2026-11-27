@@ -16,6 +16,7 @@ import {
   planCellActions,
   weekOccurrences,
   weekPlanningContext,
+  type Occurrence,
   type ScheduleException,
 } from '@ptc/shared';
 import { db, pool } from '../db/client';
@@ -186,14 +187,38 @@ export function registerWeeklyRoutes(router: Router, strParam: (v: string | stri
       const s = await loadWeekState();
       const occ = occurrenceOf(s, itemId, date);
       if (!occ) throw new Error('ไม่พบคาบเรียนนี้ในวันที่ระบุ');
-      // Restoring must not collide with what now sits in the original slot.
-      const others = s.exceptions.filter((e) => !(e.itemId === itemId && e.exceptionDate === date));
-      const problem = datedPlacementProblem(s.ctx, others, occ, date, occ.item.startPeriod!);
-      if (problem) throw new Error(`คืนตามตารางหลักไม่ได้: ${problem}`);
-      await db
-        .delete(scheduleExceptions)
-        .where(and(eq(scheduleExceptions.versionId, s.versionId), eq(scheduleExceptions.itemId, itemId), eq(scheduleExceptions.exceptionDate, date)));
-      res.json({ ok: true });
+      // Restoring must not collide with what now sits in the original slot. If a class that was itself
+      // moved (e.g. the other half of a swap) sits there, restore it too — all in one go.
+      const restore = [occ];
+      const keyOf = (o: Occurrence) => `${o.item.id}@${o.originalDate}`;
+      for (;;) {
+        const keys = new Set(restore.map(keyOf));
+        const others = s.exceptions.filter((e) => !keys.has(`${e.itemId}@${e.exceptionDate}`));
+        const blocked = restore
+          .map((o) => ({ o, problem: datedPlacementProblem(s.ctx, others, o, o.originalDate, o.item.startPeriod!) }))
+          .find((x) => x.problem);
+        if (!blocked) break;
+        const { o } = blocked;
+        const end = o.item.startPeriod! + o.item.duration;
+        const blocker = weekOccurrences(s.ctx.items, s.ctx.itemTeachers, others, mondayOf(o.originalDate)).find(
+          (w) =>
+            w.exception &&
+            !keys.has(keyOf(w)) &&
+            w.date === o.originalDate &&
+            w.period! < end &&
+            o.item.startPeriod! < w.period! + w.item.duration,
+        );
+        if (!blocker || restore.length >= 6) throw new Error(`คืนตามตารางหลักไม่ได้: ${blocked.problem}`);
+        restore.push(blocker);
+      }
+      await db.transaction(async (tx) => {
+        for (const o of restore) {
+          await tx
+            .delete(scheduleExceptions)
+            .where(and(eq(scheduleExceptions.versionId, s.versionId), eq(scheduleExceptions.itemId, o.item.id), eq(scheduleExceptions.exceptionDate, o.originalDate)));
+        }
+      });
+      res.json({ ok: true, restored: restore.map(keyOf) });
     } catch (e) {
       fail(res, e);
     }
