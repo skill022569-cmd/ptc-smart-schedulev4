@@ -299,7 +299,7 @@ export function StaffProfilePanel({
                   const s = item && teaching.subjectOf(item.offeringId);
                   const lockChange = h.before?.isLocked !== h.after?.isLocked && slot(h.before) === slot(h.after);
                   return (
-                    <li key={idx} className="rounded-md border-l-4 border-indigo-400 bg-slate-50 px-2 py-1.5">
+                    <li key={idx} className="rounded-md border border-slate-200 bg-indigo-50/50 px-2 py-1.5">
                       <span className="font-semibold">{s ? `${s.subjectCode} ${s.subjectName}` : 'คาบเรียน'}</span>{' '}
                       {lockChange ? (h.after?.isLocked ? 'ถูกล็อก' : 'ถูกปลดล็อก') : `${slot(h.before)} → ${slot(h.after)}`}
                       {h.at && <span className="ml-1 text-slate-400">· {new Date(h.at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })}</span>}

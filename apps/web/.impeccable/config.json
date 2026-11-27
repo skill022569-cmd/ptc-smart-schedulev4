@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "ai-color-palette",
+        "value": "*",
+        "files": [
+          "src/components/StaffProfilePanel.tsx"
+        ],
+        "createdAt": "2026-11-27T04:50:19.449Z",
+        "reason": "false positive: indigo-* tokens are remapped to the college seal maroon in src/index.css @theme, per the user's request to match the college colours"
+      },
+      {
+        "rule": "ai-color-palette",
+        "value": "*",
+        "files": [
+          "src/App.tsx"
+        ],
+        "createdAt": "2026-11-27T04:50:19.556Z",
+        "reason": "false positive: indigo-* tokens are remapped to the college seal maroon in src/index.css @theme, per the user's request to match the college colours"
+      }
+    ]
+  }
+}
