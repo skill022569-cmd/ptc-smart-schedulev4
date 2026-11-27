@@ -50,6 +50,7 @@ import type { ExportViewMode } from '../services/export/shared';
 import { DEFAULT_COLUMN_MAPPING, parseDataset7, validateDataset7 } from '../services/import';
 import { saveScheduleVersionAtomic, updateScheduleItemsAtomic } from '../services/occupancy.service';
 import { getItemHistory, getStaffProfile, saveStaffProfile } from '../services/staff-profile.service';
+import { registerWeeklyRoutes } from './weekly';
 import {
   commitDataset7ToDb,
   evaluateWorkspaceCached,
@@ -972,6 +973,8 @@ export function createApiRouter(): Router {
     }
     res.json({ profile: await saveStaffProfile(code, parsed.data) });
   });
+
+  registerWeeklyRoutes(router, strParam);
 
   router.get('/audit-logs', async (_req: Request, res: Response) => {
     const rows = await db.select().from(auditLogs).limit(100);

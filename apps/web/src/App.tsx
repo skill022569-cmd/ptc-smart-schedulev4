@@ -4,6 +4,7 @@ import {
   Activity,
   BarChart3,
   Calendar,
+  CalendarDays,
   Database,
   FileSpreadsheet,
   FolderKanban,
@@ -22,7 +23,7 @@ import {
 import type { AccountRole } from '@ptc/shared';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { PageSkeleton } from './components/PageSkeleton';
-import { api, getDemoRole, getStoredToken, invalidateApiCache, setDemoRole, setStoredToken } from './lib/api';
+import { api, getDemoRole, getDemoStaff, getStoredToken, invalidateApiCache, setDemoRole, setStoredToken } from './lib/api';
 import { DashboardPage } from './pages/DashboardPage';
 import type { AuthSession } from './types/ui';
 
@@ -37,6 +38,7 @@ const BenchmarkPage = lazy(() => import('./pages/BenchmarkPage').then((m) => ({ 
 const IssueReportPage = lazy(() => import('./pages/IssueReportPage').then((m) => ({ default: m.IssueReportPage })));
 
 const StaffPage = lazy(() => import('./pages/StaffPage').then((m) => ({ default: m.StaffPage })));
+const WeeklyPage = lazy(() => import('./pages/WeeklyPage').then((m) => ({ default: m.WeeklyPage })));
 
 interface NavItem {
   id: string;
@@ -46,9 +48,9 @@ interface NavItem {
 
 /** Menus each role sees; admin and scheduler see everything. */
 const ROLE_MENUS: Partial<Record<AccountRole, string[]>> = {
-  teacher: ['dashboard', 'workspace', 'views', 'staff', 'issues'],
-  student: ['dashboard', 'workspace', 'views'],
-  viewer: ['dashboard', 'views', 'staff'],
+  teacher: ['dashboard', 'weekly', 'workspace', 'views', 'staff', 'issues'],
+  student: ['dashboard', 'weekly', 'workspace', 'views'],
+  viewer: ['dashboard', 'weekly', 'views', 'staff'],
 };
 
 const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
@@ -74,7 +76,8 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
   {
     title: '3. ผลลัพธ์ (Output)',
     items: [
-      { id: 'workspace', label: 'จัดการตาราง (ย้าย/สลับคาบ)', icon: <Wrench className="h-4 w-4" /> },
+      { id: 'weekly', label: 'ตารางรายสัปดาห์ & ชดเชย', icon: <CalendarDays className="h-4 w-4" /> },
+      { id: 'workspace', label: 'ตารางหลัก (ย้าย/สลับถาวร)', icon: <Wrench className="h-4 w-4" /> },
       { id: 'views', label: 'ตารางเรียน & ส่งออกรายงาน', icon: <Calendar className="h-4 w-4" /> },
       { id: 'quality', label: 'สรุปผลตรวจสอบ 4 ด้าน', icon: <ShieldCheck className="h-4 w-4" /> },
       { id: 'issues', label: 'แจ้งปัญหา & แก้ไข', icon: <MessageSquareWarning className="h-4 w-4" /> },
@@ -195,6 +198,26 @@ export function App() {
   const allowedMenus = ROLE_MENUS[effectiveRole];
   const canSee = (id: string) => !allowedMenus || allowedMenus.includes(id);
   const page = canSee(activeTab) ? activeTab : 'dashboard';
+  const jwtStaffId = hasJwt && session?.user && !session.user.isPublicGuest ? session.user.staffId : null;
+
+  // Requests waiting for this user (badge on the weekly menu).
+  const [pending, setPending] = useState(0);
+  const refreshPending = () => {
+    const admin = effectiveRole === 'admin' || effectiveRole === 'scheduler';
+    api
+      .weeklyData()
+      .then(async (w) => {
+        let myCode = getDemoStaff();
+        if (jwtStaffId) myCode = (await api.scheduleLatest(profile)).context.staff.find((st) => st.id === jwtStaffId)?.employeeCode ?? '';
+        setPending(
+          w.requests.filter(
+            (r) => (r.status === 'pending_peer' && (admin || (myCode && r.peerCode === myCode))) || (r.status === 'pending_admin' && admin),
+          ).length,
+        );
+      })
+      .catch(() => setPending(0));
+  };
+  useEffect(refreshPending, [effectiveRole, jwtStaffId, statusVersion]);
 
   const renderPage = () => {
     const scopeKey = `${page}-${effectiveRole}`;
@@ -217,6 +240,8 @@ export function App() {
         return <BenchmarkPage key={scopeKey} />;
       case 'issues':
         return <IssueReportPage key={scopeKey} profile={profile} />;
+      case 'weekly':
+        return <WeeklyPage key={scopeKey} profile={profile} role={effectiveRole} jwtStaffId={jwtStaffId} onRequestsChanged={refreshPending} />;
       case 'staff':
         return <StaffPage key={scopeKey} profile={profile} role={effectiveRole} />;
       case 'dashboard':
@@ -243,6 +268,11 @@ export function App() {
       >
         {item.icon}
         <span className="truncate">{item.label}</span>
+        {item.id === 'weekly' && pending > 0 && (
+          <span className="ml-auto rounded-full bg-gold-500 px-1.5 text-[11px] font-bold text-indigo-950" aria-label={`${pending} คำขอรอดำเนินการ`}>
+            {pending}
+          </span>
+        )}
       </button>
     );
   };

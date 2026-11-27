@@ -1,4 +1,4 @@
-import type { AccountRole, XaiExplanationEntry } from '@ptc/shared';
+import type { AccountRole, ScheduleException, XaiExplanationEntry } from '@ptc/shared';
 import type {
   AuthSession,
   BenchmarkResultRow,
@@ -78,6 +78,32 @@ export function getDemoRole(): AccountRole {
 export function setDemoRole(role: AccountRole): void {
   localStorage.setItem(DEMO_ROLE_KEY, role);
   invalidateApiCache();
+}
+
+/** Public demo: which teacher (employee code) the "teacher" role acts as. */
+const DEMO_STAFF_KEY = 'ptc-demo-staff';
+export const getDemoStaff = (): string => localStorage.getItem(DEMO_STAFF_KEY) ?? '';
+export const setDemoStaff = (code: string) => localStorage.setItem(DEMO_STAFF_KEY, code);
+
+export type Dated = { itemId: string; date: string };
+export interface ChangeRequest {
+  id: string;
+  kind: 'swap_week' | 'move_permanent';
+  status: 'pending_peer' | 'pending_admin' | 'approved' | 'rejected';
+  payload: { a?: Dated; b?: Dated; itemId?: string; day?: number; period?: number };
+  requestedBy: string;
+  peerCode: string | null;
+  note: string | null;
+  decidedBy: string | null;
+  createdAt: string | null;
+  decidedAt: string | null;
+}
+export interface WeeklyData {
+  versionId: string;
+  termStart: string;
+  exceptions: ScheduleException[];
+  requests: ChangeRequest[];
+  lessonPlans: Array<{ subjectCode: string; weekNo: number; unit: string }>;
 }
 
 function authScopeKey(): string {
@@ -334,6 +360,30 @@ export const api = {
     mutateRequest<{ profile: StaffProfile }>(
       `/api/staff/${encodeURIComponent(employeeCode)}/profile`,
       { method: 'PUT', body: JSON.stringify(profile) },
+      true,
+    ),
+  weeklyData: () => rawRequest<WeeklyData>('/api/weekly/data'),
+  setDatedSlot: (itemId: string, date: string, to: { date: string; period: number } | null) =>
+    mutateRequest<{ ok: true }>('/api/weekly/exceptions', { method: 'POST', body: JSON.stringify({ itemId, date, to }) }, true),
+  restoreDated: (itemId: string, date: string) =>
+    mutateRequest<{ ok: true }>(
+      `/api/weekly/exceptions?itemId=${encodeURIComponent(itemId)}&date=${date}`,
+      { method: 'DELETE' },
+      true,
+    ),
+  swapDated: (a: Dated, b: Dated) =>
+    mutateRequest<{ ok: true }>('/api/weekly/swap', { method: 'POST', body: JSON.stringify({ a, b }) }, true),
+  createRequest: (
+    body:
+      | { kind: 'swap_week'; a: Dated; b: Dated; peerCode: string; requestedBy: string; note?: string }
+      | { kind: 'move_permanent'; itemId: string; day: number; period: number; requestedBy: string; note?: string },
+  ) => mutateRequest<{ ok: true; id: string }>('/api/weekly/requests', { method: 'POST', body: JSON.stringify(body) }, true),
+  decideRequest: (id: string, accept: boolean, by: string) =>
+    mutateRequest<{ ok: true }>(`/api/weekly/requests/${encodeURIComponent(id)}/decide`, { method: 'POST', body: JSON.stringify({ accept, by }) }),
+  saveLessonPlan: (subjectCode: string, weeks: Array<{ weekNo: number; unit: string }>) =>
+    mutateRequest<{ ok: true }>(
+      `/api/weekly/lesson-plans/${encodeURIComponent(subjectCode)}`,
+      { method: 'PUT', body: JSON.stringify({ weeks }) },
       true,
     ),
   moveItems: (versionId: string, changes: ItemChange[]) =>
